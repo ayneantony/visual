@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kaleidoscope Mix Studio</title>
+  <title>Kaleidoscope Mix Studio (120 FPS Optimized)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html {
@@ -20,18 +20,36 @@
       height: 100vh;
     }
 
+    /* Live FPS Counter */
+    #fps-badge {
+      position: fixed;
+      top: 0.85rem;
+      right: 0.95rem;
+      background: rgba(10, 12, 22, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #a7f3d0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      z-index: 15;
+      pointer-events: none;
+      display: none;
+    }
+    #fps-badge.visible { display: block; }
+
     /* Setup Overlay */
     #setup-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(6, 7, 14, 0.84);
-      backdrop-filter: blur(14px);
+      background: rgba(6, 7, 14, 0.9);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1.25rem;
       z-index: 20;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.25s ease;
     }
     #setup-overlay.hidden {
       opacity: 0;
@@ -39,13 +57,13 @@
     }
     .studio-panel {
       width: 100%;
-      max-width: 860px;
-      max-height: 90vh;
+      max-width: 880px;
+      max-height: 92vh;
       overflow-y: auto;
-      background: rgba(17, 20, 34, 0.92);
+      background: #111422;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 16px;
-      padding: 1.75rem;
+      padding: 1.65rem;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
     }
     .studio-header {
@@ -74,25 +92,22 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid rgba(129, 140, 248, 0.5);
+      background: rgba(99, 102, 241, 0.22);
+      border: 1px solid rgba(129, 140, 248, 0.55);
       color: #e0e7ff;
       padding: 0.6rem 1rem;
       border-radius: 10px;
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.15s;
     }
-    .upload-btn:hover {
-      background: rgba(99, 102, 241, 0.35);
-      transform: translateY(-1px);
-    }
+    .upload-btn:hover { background: rgba(99, 102, 241, 0.38); }
     #image-input { display: none; }
 
     /* Items Grid */
     .section-label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #9ca3af;
@@ -102,7 +117,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
       gap: 0.85rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.35rem;
     }
     .item-card {
       position: relative;
@@ -112,12 +127,11 @@
       padding: 0.75rem;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
-      transition: border-color 0.2s, background 0.2s;
+      gap: 0.55rem;
     }
     .item-card.enabled {
-      border-color: rgba(168, 85, 247, 0.6);
-      background: rgba(168, 85, 247, 0.08);
+      border-color: rgba(168, 85, 247, 0.65);
+      background: rgba(168, 85, 247, 0.09);
     }
     .item-top {
       display: flex;
@@ -126,7 +140,7 @@
     }
     .item-preview {
       width: 100%;
-      height: 76px;
+      height: 74px;
       border-radius: 8px;
       background: #0b0d17;
       display: flex;
@@ -140,14 +154,14 @@
       object-fit: cover;
     }
     .item-preview svg {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       stroke: #c084fc;
       fill: none;
       stroke-width: 1.75;
     }
     .item-name {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
@@ -164,9 +178,9 @@
       border: 1px solid rgba(255, 255, 255, 0.22);
       color: #f9fafb;
       font-family: monospace;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
-      padding: 0.28rem 0.6rem;
+      padding: 0.26rem 0.55rem;
       border-radius: 6px;
       cursor: pointer;
       min-width: 54px;
@@ -174,7 +188,7 @@
     }
     .key-bind-btn.listening {
       border-color: #f472b6;
-      background: rgba(244, 114, 182, 0.22);
+      background: rgba(244, 114, 182, 0.25);
       color: #fbcfe8;
     }
     .remove-btn {
@@ -190,18 +204,18 @@
     /* Mix Options Row */
     .mix-settings {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      background: rgba(0, 0, 0, 0.28);
-      padding: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 0.9rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.95rem;
       border-radius: 12px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.35rem;
     }
     .setting-box {
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
-      font-size: 0.85rem;
+      font-size: 0.83rem;
     }
     .setting-box label { color: #d1d5db; font-weight: 500; }
     .setting-box select, .setting-box input[type="range"] {
@@ -209,7 +223,7 @@
       color: #fff;
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 8px;
-      padding: 0.45rem;
+      padding: 0.42rem;
     }
     .checkbox-row {
       display: flex;
@@ -220,7 +234,7 @@
     }
     .start-btn {
       width: 100%;
-      padding: 0.9rem;
+      padding: 0.88rem;
       border: none;
       border-radius: 12px;
       font-size: 1rem;
@@ -228,39 +242,33 @@
       color: #fff;
       background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.2s;
     }
-    .start-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 28px rgba(168, 85, 247, 0.45);
-    }
+    .start-btn:hover { filter: brightness(1.08); }
 
-    /* Live Mode HUD */
+    /* Live Mode HUD (No backdrop-filter for maximum GPU FPS) */
     #live-hud {
       position: fixed;
-      bottom: 1rem;
+      bottom: 0.95rem;
       left: 50%;
       transform: translateX(-50%);
       display: none;
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      background: rgba(10, 12, 22, 0.72);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      padding: 0.6rem 0.9rem;
+      gap: 0.45rem;
+      background: rgba(11, 13, 24, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 0.55rem 0.85rem;
       border-radius: 14px;
       z-index: 10;
-      max-width: 95vw;
-      transition: opacity 0.3s;
+      max-width: 96vw;
     }
     #live-hud.visible { display: flex; }
     .hud-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.35rem 0.65rem;
+      gap: 0.38rem;
+      padding: 0.32rem 0.62rem;
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -268,17 +276,15 @@
       color: #d1d5db;
       cursor: pointer;
       user-select: none;
-      transition: all 0.2s;
     }
     .hud-pill.active {
-      background: rgba(168, 85, 247, 0.32);
+      background: rgba(168, 85, 247, 0.36);
       border-color: #d8b4fe;
       color: #fff;
-      box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
     }
     .hud-key {
-      background: rgba(0, 0, 0, 0.45);
-      padding: 0.1rem 0.38rem;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 0.1rem 0.36rem;
       border-radius: 4px;
       font-family: monospace;
       font-weight: 700;
@@ -288,7 +294,7 @@
       background: rgba(255, 255, 255, 0.12);
       border: none;
       color: #fff;
-      padding: 0.38rem 0.7rem;
+      padding: 0.36rem 0.68rem;
       border-radius: 8px;
       font-size: 0.8rem;
       cursor: pointer;
@@ -298,6 +304,7 @@
 </head>
 <body>
   <canvas id="glcanvas"></canvas>
+  <div id="fps-badge">120 FPS</div>
 
   <!-- Pre-Start Configuration Overlay -->
   <div id="setup-overlay">
@@ -320,7 +327,7 @@
         <div class="setting-box">
           <label class="checkbox-row">
             <input type="checkbox" id="auto-loop-toggle" checked />
-            Auto-Cycle Loop (Crossfade Mix)
+            Auto-Cycle Loop (Crossfade)
           </label>
         </div>
         <div class="setting-box">
@@ -337,6 +344,14 @@
             <option value="8" selected>8 Segments</option>
             <option value="12">12 Segments</option>
             <option value="16">16 Segments</option>
+          </select>
+        </div>
+        <div class="setting-box">
+          <label for="scale-select">Render Resolution (FPS)</label>
+          <select id="scale-select">
+            <option value="0.65">Max 120 FPS Boost (65%)</option>
+            <option value="0.8" selected>Ultra Smooth (80%)</option>
+            <option value="1.0">Native Full Res (100%)</option>
           </select>
         </div>
         <div class="setting-box">
@@ -365,6 +380,13 @@
     uniform float u_time;
     uniform float u_speed;
     uniform float u_segments;
+    uniform float u_palBlend;
+
+    // Precomputed per-layer rotation matrices (eliminates 4x per-pixel sin/cos)
+    uniform mat2 u_rot0;
+    uniform mat2 u_rot1;
+    uniform mat2 u_rot2;
+    uniform mat2 u_rot3;
 
     // 3-Slot Visual Mixer Uniforms
     uniform int u_type0;
@@ -382,33 +404,13 @@
     uniform float u_weight2;
     uniform sampler2D u_tex2;
 
-    vec3 paletteA(float t) {
-      vec3 a = vec3(0.5, 0.5, 0.5);
-      vec3 b = vec3(0.5, 0.5, 0.5);
-      vec3 c = vec3(1.0, 1.0, 1.0);
-      vec3 d = vec3(0.263, 0.416, 0.557);
-      return a + b * cos(6.28318 * (c * t + d));
-    }
-
-    vec3 paletteB(float t) {
-      vec3 a = vec3(0.5, 0.5, 0.5);
-      vec3 b = vec3(0.5, 0.5, 0.5);
-      vec3 c = vec3(1.0, 0.7, 0.4);
-      vec3 d = vec3(0.00, 0.15, 0.20);
-      return a + b * cos(6.28318 * (c * t + d));
-    }
-
     vec3 getSlowColor(float t) {
-      float blend = 0.5 + 0.5 * sin(u_time * 0.09);
-      return mix(paletteA(t), paletteB(t), blend);
+      vec3 c1 = 0.5 + 0.5 * cos(6.283185 * (t + vec3(0.263, 0.416, 0.557)));
+      vec3 c2 = 0.5 + 0.5 * cos(6.283185 * (vec3(1.0, 0.7, 0.4) * t + vec3(0.0, 0.15, 0.20)));
+      return mix(c1, c2, u_palBlend);
     }
 
-    mat2 rot(float a) {
-      float s = sin(a), c = cos(a);
-      return mat2(c, -s, s, c);
-    }
-
-    // 2D Geometric SDFs
+    // Fast 2D Geometric SDFs
     float sdCircle(vec2 p, float r) {
       return length(p) - r;
     }
@@ -422,8 +424,9 @@
     }
 
     float sdDiamond(vec2 p, float r) {
-      p = abs(p * rot(0.78539816));
-      vec2 d = p - vec2(r * 0.75);
+      // 45-degree rotation without matrix multiply
+      vec2 q = abs(vec2(p.x - p.y, p.x + p.y) * 0.70710678);
+      vec2 d = q - vec2(r * 0.75);
       return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
     }
 
@@ -444,10 +447,13 @@
       return min(d1, d2);
     }
 
+    // Chebyshev polynomial cos(6a) — avoids expensive atan() + cos()
     float sdLotus(vec2 p, float r) {
-      float a = atan(p.y, p.x);
-      float petals = 0.038 * cos(a * 6.0);
-      return length(p) - (r + petals);
+      float len = length(p) + 0.00001;
+      float c = p.x / len;
+      float c3 = (4.0 * c * c - 3.0) * c;
+      float cos6a = 2.0 * c3 * c3 - 1.0;
+      return len - (r + 0.038 * cos6a);
     }
 
     float evalShape(vec2 p, float r, float id) {
@@ -459,17 +465,11 @@
       return sdLotus(p, r * 0.9);
     }
 
-    vec3 renderShapeGlow(vec2 p, float shapeId, vec3 col) {
-      float d = evalShape(p, 0.16, shapeId);
-      d = sin(d * 14.0 - u_time * 1.1) / 14.0;
-      d = abs(d);
-      d = pow(0.0075 / (d + 0.0012), 1.2);
-      return col * d;
-    }
-
-    vec2 getKaleidoTexUV(vec2 p, float layer) {
-      vec2 raw = p * 2.1 + 0.5 + vec2(layer * 0.17, u_time * 0.05);
-      return 1.0 - abs(mod(raw, 2.0) - 1.0);
+    // Fast algebraic glow falloff (replaces expensive pow(x, 1.2))
+    vec3 renderShapeGlow(vec2 p, float shapeId, vec3 col, float timePhase) {
+      float d = abs(sin(evalShape(p, 0.16, shapeId) * 14.0 - timePhase)) * 0.07142857;
+      float g = 0.0075 / (d + 0.0012);
+      return col * (g * inversesqrt(inversesqrt(g + 0.0001)));
     }
 
     vec3 styleTexture(vec4 texel, vec3 col) {
@@ -485,8 +485,7 @@
       float angle = atan(uv.y, uv.x);
 
       float slice = 6.2831853 / u_segments;
-      angle = mod(angle, slice);
-      angle = abs(angle - slice * 0.5);
+      angle = abs(mod(angle, slice) - slice * 0.5);
 
       float depth = 0.55 / (radius + 0.1) - u_time * u_speed;
 
@@ -496,37 +495,44 @@
       );
 
       vec3 finalColor = vec3(0.0);
+      float timePhase = u_time * 1.1;
+      float baseColorPhase = depth * 0.12 + u_time * 0.05;
+      vec2 texDrift = vec2(0.0, u_time * 0.05);
 
-      for (float i = 0.0; i < 4.0; i++) {
-        p *= rot(u_time * 0.1 + i * 0.45);
+      for (int i = 0; i < 4; i++) {
+        if (i == 0) p = u_rot0 * p;
+        else if (i == 1) p = u_rot1 * p;
+        else if (i == 2) p = u_rot2 * p;
+        else p = u_rot3 * p;
+
         p = abs(fract(p * 1.35) - 0.5) - 0.25;
 
-        vec3 col = getSlowColor(depth * 0.12 + i * 0.22 + u_time * 0.05);
-        vec2 texUV = getKaleidoTexUV(p, i);
+        float fi = float(i);
+        vec3 col = getSlowColor(baseColorPhase + fi * 0.22);
+        vec2 texUV = p * 2.1 + 0.5 + texDrift + vec2(fi * 0.17, 0.0);
 
-        if (u_weight0 > 0.001) {
+        if (u_weight0 > 0.002) {
           vec3 layer0 = (u_type0 == 0)
-            ? renderShapeGlow(p, u_shape0, col)
+            ? renderShapeGlow(p, u_shape0, col, timePhase)
             : styleTexture(texture2D(u_tex0, texUV), col);
           finalColor += layer0 * u_weight0;
         }
 
-        if (u_weight1 > 0.001) {
+        if (u_weight1 > 0.002) {
           vec3 layer1 = (u_type1 == 0)
-            ? renderShapeGlow(p, u_shape1, col)
+            ? renderShapeGlow(p, u_shape1, col, timePhase)
             : styleTexture(texture2D(u_tex1, texUV), col);
           finalColor += layer1 * u_weight1;
         }
 
-        if (u_weight2 > 0.001) {
+        if (u_weight2 > 0.002) {
           vec3 layer2 = (u_type2 == 0)
-            ? renderShapeGlow(p, u_shape2, col)
+            ? renderShapeGlow(p, u_shape2, col, timePhase)
             : styleTexture(texture2D(u_tex2, texUV), col);
           finalColor += layer2 * u_weight2;
         }
       }
 
-      // Prevent over-saturation when multiple layers blend together
       finalColor = finalColor / (1.0 + finalColor * 0.18);
 
       float tunnelCenter = smoothstep(0.0, 0.32, radius);
@@ -539,11 +545,22 @@
 
   <script>
     const canvas = document.getElementById('glcanvas');
-    const gl = canvas.getContext('webgl');
+    // High-performance WebGL context with alpha/depth/stencil disabled
+    const gl = canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance'
+    });
+
+    let renderScale = 0.8;
 
     function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const effectiveScale = dpr * renderScale;
+      canvas.width = Math.max(320, Math.floor(window.innerWidth * effectiveScale));
+      canvas.height = Math.max(240, Math.floor(window.innerHeight * effectiveScale));
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
     window.addEventListener('resize', resize);
@@ -570,12 +587,17 @@
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-    // Uniform locations
+    // Cache all uniform locations once
     const uLoc = {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       time: gl.getUniformLocation(program, 'u_time'),
       speed: gl.getUniformLocation(program, 'u_speed'),
       segments: gl.getUniformLocation(program, 'u_segments'),
+      palBlend: gl.getUniformLocation(program, 'u_palBlend'),
+      rot0: gl.getUniformLocation(program, 'u_rot0'),
+      rot1: gl.getUniformLocation(program, 'u_rot1'),
+      rot2: gl.getUniformLocation(program, 'u_rot2'),
+      rot3: gl.getUniformLocation(program, 'u_rot3'),
       type0: gl.getUniformLocation(program, 'u_type0'),
       shape0: gl.getUniformLocation(program, 'u_shape0'),
       weight0: gl.getUniformLocation(program, 'u_weight0'),
@@ -590,7 +612,6 @@
       tex2: gl.getUniformLocation(program, 'u_tex2')
     };
 
-    // Fallback 1x1 pixel texture so samplers are always valid
     function createFallbackTexture() {
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -599,19 +620,28 @@
     }
     const fallbackTex = createFallbackTexture();
 
+    // Scale uploaded images to 512x512 POT with hardware MIRRORED_REPEAT + mipmaps
+    const offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = 512;
+    offscreenCanvas.height = 512;
+    const offscreenCtx = offscreenCanvas.getContext('2d');
+
     function createTextureFromImage(img) {
+      offscreenCtx.clearRect(0, 0, 512, 512);
+      offscreenCtx.drawImage(img, 0, 0, 512, 512);
+
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, offscreenCanvas);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.generateMipmap(gl.TEXTURE_2D);
       return tex;
     }
 
-    // Built-in geometric objects
     const shapeSVGs = [
       '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
       '<svg viewBox="0 0 24 24"><polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5"/></svg>',
@@ -635,11 +665,28 @@
     let isStarted = false;
     let autoLoop = true;
     let mixMode = 'blend';
+    let tunnelSpeed = 0.45;
+    let tunnelSegments = 8.0;
     let manualOverrideTimer = 0;
+
+    // Cache settings in memory so render loop never touches DOM
+    const speedInput = document.getElementById('speed-range');
+    const segmentsSelect = document.getElementById('segments-select');
+    const scaleSelect = document.getElementById('scale-select');
+    const autoLoopToggle = document.getElementById('auto-loop-toggle');
+    const mixModeSelect = document.getElementById('mix-mode-select');
+
+    speedInput.addEventListener('input', () => { tunnelSpeed = parseFloat(speedInput.value); });
+    segmentsSelect.addEventListener('change', () => { tunnelSegments = parseFloat(segmentsSelect.value); });
+    scaleSelect.addEventListener('change', () => {
+      renderScale = parseFloat(scaleSelect.value);
+      resize();
+    });
 
     const itemsGrid = document.getElementById('items-grid');
     const setupOverlay = document.getElementById('setup-overlay');
     const liveHud = document.getElementById('live-hud');
+    const fpsBadge = document.getElementById('fps-badge');
 
     function renderSetupGrid() {
       itemsGrid.innerHTML = '';
@@ -657,9 +704,7 @@
         cb.checked = item.enabled;
         cb.addEventListener('change', () => {
           item.enabled = cb.checked;
-          if (!item.enabled) {
-            item.targetWeight = 0;
-          }
+          if (!item.enabled) item.targetWeight = 0;
           renderSetupGrid();
         });
         toggleLabel.appendChild(cb);
@@ -714,7 +759,6 @@
       });
     }
 
-    // Handle Image Uploads
     document.getElementById('image-input').addEventListener('change', (e) => {
       const files = Array.from(e.target.files);
       files.forEach((file) => {
@@ -745,16 +789,22 @@
       e.target.value = '';
     });
 
+    let hudPillMap = new Map();
+    let lastActiveSignature = '';
+
     function buildLiveHud() {
       liveHud.innerHTML = '';
+      hudPillMap.clear();
+      lastActiveSignature = '';
+
       const activeItems = deck.filter((d) => d.enabled);
       activeItems.forEach((item) => {
         const pill = document.createElement('div');
         pill.className = 'hud-pill' + (item.targetWeight > 0.25 ? ' active' : '');
-        pill.dataset.id = item.id;
         pill.innerHTML = `<span class="hud-key">${item.key}</span><span>${item.name}</span>`;
         pill.addEventListener('click', () => triggerItem(item));
         liveHud.appendChild(pill);
+        hudPillMap.set(item.id, pill);
       });
 
       const autoBtn = document.createElement('button');
@@ -762,7 +812,7 @@
       autoBtn.textContent = autoLoop ? 'Auto-Loop: ON' : 'Auto-Loop: OFF';
       autoBtn.addEventListener('click', () => {
         autoLoop = !autoLoop;
-        document.getElementById('auto-loop-toggle').checked = autoLoop;
+        autoLoopToggle.checked = autoLoop;
         buildLiveHud();
       });
       liveHud.appendChild(autoBtn);
@@ -774,20 +824,41 @@
       liveHud.appendChild(editBtn);
     }
 
+    // Only updates DOM when active highlight state actually changes
+    function syncHudHighlight() {
+      let sig = '';
+      for (let i = 0; i < deck.length; i++) {
+        if (deck[i].targetWeight > 0.25) sig += deck[i].id + ',';
+      }
+      if (sig === lastActiveSignature) return;
+      lastActiveSignature = sig;
+
+      hudPillMap.forEach((pill, id) => {
+        const item = deck.find((d) => d.id === id);
+        if (item) {
+          pill.classList.toggle('active', item.targetWeight > 0.25);
+        }
+      });
+    }
+
     function openSetup() {
       isStarted = false;
       setupOverlay.classList.remove('hidden');
       liveHud.classList.remove('visible');
+      fpsBadge.classList.remove('visible');
       renderSetupGrid();
     }
 
     function startMix() {
-      // Ensure at least one item is enabled
       if (!deck.some((d) => d.enabled)) {
         deck[0].enabled = true;
       }
-      autoLoop = document.getElementById('auto-loop-toggle').checked;
-      mixMode = document.getElementById('mix-mode-select').value;
+      autoLoop = autoLoopToggle.checked;
+      mixMode = mixModeSelect.value;
+      tunnelSpeed = parseFloat(speedInput.value);
+      tunnelSegments = parseFloat(segmentsSelect.value);
+      renderScale = parseFloat(scaleSelect.value);
+      resize();
 
       const enabledItems = deck.filter((d) => d.enabled);
       deck.forEach((d) => (d.targetWeight = 0));
@@ -797,31 +868,26 @@
       listeningItemId = null;
       setupOverlay.classList.add('hidden');
       liveHud.classList.add('visible');
+      fpsBadge.classList.add('visible');
       buildLiveHud();
     }
 
     document.getElementById('start-btn').addEventListener('click', startMix);
 
     function triggerItem(targetItem) {
-      if (!targetItem.enabled) {
-        targetItem.enabled = true;
-      }
-      manualOverrideTimer = 4.5; // Pause auto-advance briefly after manual key trigger
+      if (!targetItem.enabled) targetItem.enabled = true;
+      manualOverrideTimer = 4.5;
 
       if (mixMode === 'solo') {
         deck.forEach((item) => {
           item.targetWeight = item.id === targetItem.id ? 1.0 : 0.0;
         });
       } else {
-        // Blend Mix: toggle or boost up to 3 active items
         if (targetItem.targetWeight > 0.5) {
           const activeCount = deck.filter((d) => d.targetWeight > 0.2).length;
-          if (activeCount > 1) {
-            targetItem.targetWeight = 0.0;
-          }
+          if (activeCount > 1) targetItem.targetWeight = 0.0;
         } else {
           targetItem.targetWeight = 1.0;
-          // Keep at most 3 highest-weighted items active
           const active = deck.filter((d) => d.targetWeight > 0.2);
           if (active.length > 3) {
             const oldest = active.find((d) => d.id !== targetItem.id);
@@ -829,22 +895,10 @@
           }
         }
       }
-      updateHudHighlight();
+      syncHudHighlight();
     }
 
-    function updateHudHighlight() {
-      const pills = liveHud.querySelectorAll('.hud-pill');
-      pills.forEach((pill) => {
-        const item = deck.find((d) => d.id === pill.dataset.id);
-        if (item) {
-          pill.classList.toggle('active', item.targetWeight > 0.25);
-        }
-      });
-    }
-
-    // Keyboard Controls
     window.addEventListener('keydown', (e) => {
-      // Rebinding key in Setup Studio
       if (listeningItemId) {
         e.preventDefault();
         if (e.key !== 'Escape') {
@@ -867,28 +921,53 @@
       if (e.code === 'Space') {
         e.preventDefault();
         autoLoop = !autoLoop;
-        document.getElementById('auto-loop-toggle').checked = autoLoop;
+        autoLoopToggle.checked = autoLoop;
         buildLiveHud();
         return;
       }
 
       const pressed = e.key.toUpperCase();
       const matched = deck.find((item) => item.key.toUpperCase() === pressed);
-      if (matched) {
-        triggerItem(matched);
-      }
+      if (matched) triggerItem(matched);
     });
 
     renderSetupGrid();
 
-    // Animation & Auto-Mix Loop
+    // Pre-allocated Float32Arrays for rotation matrices to avoid garbage collection
+    const rotMats = [
+      new Float32Array(4),
+      new Float32Array(4),
+      new Float32Array(4),
+      new Float32Array(4)
+    ];
+    const rotUniformLocs = [uLoc.rot0, uLoc.rot1, uLoc.rot2, uLoc.rot3];
+
     let lastTime = 0;
     let loopPhase = 0;
+    let fpsFrames = 0;
+    let fpsLastUpdate = 0;
 
     function render(now) {
+      requestAnimationFrame(render);
+
+      // Pause heavy GPU rendering while Setup Studio is covering the screen
+      if (!isStarted) {
+        lastTime = now * 0.001;
+        return;
+      }
+
       const timeSec = now * 0.001;
       const dt = Math.min(0.1, timeSec - lastTime);
       lastTime = timeSec;
+
+      // Update FPS badge twice per second
+      fpsFrames++;
+      if (now - fpsLastUpdate >= 500) {
+        const fps = Math.round((fpsFrames * 1000) / (now - fpsLastUpdate));
+        fpsBadge.textContent = `${fps} FPS`;
+        fpsFrames = 0;
+        fpsLastUpdate = now;
+      }
 
       if (manualOverrideTimer > 0) {
         manualOverrideTimer -= dt;
@@ -896,68 +975,95 @@
 
       const enabledItems = deck.filter((d) => d.enabled);
 
-      // Auto-Cycle Mix Progression
-      if (isStarted && autoLoop && manualOverrideTimer <= 0 && enabledItems.length > 1) {
+      if (autoLoop && manualOverrideTimer <= 0 && enabledItems.length > 1) {
         loopPhase += dt * 0.28;
         const count = enabledItems.length;
         const idxA = Math.floor(loopPhase) % count;
         const idxB = (idxA + 1) % count;
         const frac = loopPhase - Math.floor(loopPhase);
-        // Smooth crossfade curve
         const blend = frac * frac * (3.0 - 2.0 * frac);
 
-        deck.forEach((d) => (d.targetWeight = 0));
+        for (let i = 0; i < deck.length; i++) deck[i].targetWeight = 0;
         enabledItems[idxA].targetWeight = 1.0 - blend * 0.7;
         enabledItems[idxB].targetWeight = blend;
-        updateHudHighlight();
+        syncHudHighlight();
       }
 
-      // Smoothly interpolate all item weights
-      deck.forEach((item) => {
-        item.weight += (item.targetWeight - item.weight) * Math.min(1.0, dt * 4.5);
-      });
+      const lerpFactor = Math.min(1.0, dt * 4.5);
+      for (let i = 0; i < deck.length; i++) {
+        deck[i].weight += (deck[i].targetWeight - deck[i].weight) * lerpFactor;
+      }
 
-      // Pick top 3 weighted items for the 3 shader slots
-      const topSlots = [...deck]
-        .filter((d) => d.weight > 0.002)
-        .sort((a, b) => b.weight - a.weight)
-        .slice(0, 3);
+      // Find top 3 active items without array allocations
+      let s0 = null, s1 = null, s2 = null;
+      for (let i = 0; i < deck.length; i++) {
+        const item = deck[i];
+        if (item.weight <= 0.002) continue;
+        if (!s0 || item.weight > s0.weight) {
+          s2 = s1; s1 = s0; s0 = item;
+        } else if (!s1 || item.weight > s1.weight) {
+          s2 = s1; s1 = item;
+        } else if (!s2 || item.weight > s2.weight) {
+          s2 = item;
+        }
+      }
 
-      while (topSlots.length < 3) {
-        topSlots.push({ type: 'shape', shapeId: 0, weight: 0.0, texture: fallbackTex });
+      // Compute 4 rotation matrices on CPU once per frame
+      for (let i = 0; i < 4; i++) {
+        const a = timeSec * 0.1 + i * 0.45;
+        const s = Math.sin(a);
+        const c = Math.cos(a);
+        const m = rotMats[i];
+        m[0] = c; m[1] = -s; m[2] = s; m[3] = c;
+        gl.uniformMatrix2fv(rotUniformLocs[i], false, m);
       }
 
       gl.uniform2f(uLoc.resolution, canvas.width, canvas.height);
       gl.uniform1f(uLoc.time, timeSec);
-      gl.uniform1f(uLoc.speed, parseFloat(document.getElementById('speed-range').value));
-      gl.uniform1f(uLoc.segments, parseFloat(document.getElementById('segments-select').value));
+      gl.uniform1f(uLoc.speed, tunnelSpeed);
+      gl.uniform1f(uLoc.segments, tunnelSegments);
+      gl.uniform1f(uLoc.palBlend, 0.5 + 0.5 * Math.sin(timeSec * 0.09));
 
       // Bind Slot 0
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, topSlots[0].type === 'image' ? topSlots[0].texture : fallbackTex);
-      gl.uniform1i(uLoc.tex0, 0);
-      gl.uniform1i(uLoc.type0, topSlots[0].type === 'image' ? 1 : 0);
-      gl.uniform1f(uLoc.shape0, topSlots[0].shapeId || 0);
-      gl.uniform1f(uLoc.weight0, topSlots[0].weight);
+      if (s0) {
+        gl.bindTexture(gl.TEXTURE_2D, s0.type === 'image' ? s0.texture : fallbackTex);
+        gl.uniform1i(uLoc.tex0, 0);
+        gl.uniform1i(uLoc.type0, s0.type === 'image' ? 1 : 0);
+        gl.uniform1f(uLoc.shape0, s0.shapeId || 0);
+        gl.uniform1f(uLoc.weight0, s0.weight);
+      } else {
+        gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
+        gl.uniform1f(uLoc.weight0, 0.0);
+      }
 
       // Bind Slot 1
       gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, topSlots[1].type === 'image' ? topSlots[1].texture : fallbackTex);
-      gl.uniform1i(uLoc.tex1, 1);
-      gl.uniform1i(uLoc.type1, topSlots[1].type === 'image' ? 1 : 0);
-      gl.uniform1f(uLoc.shape1, topSlots[1].shapeId || 0);
-      gl.uniform1f(uLoc.weight1, topSlots[1].weight);
+      if (s1) {
+        gl.bindTexture(gl.TEXTURE_2D, s1.type === 'image' ? s1.texture : fallbackTex);
+        gl.uniform1i(uLoc.tex1, 1);
+        gl.uniform1i(uLoc.type1, s1.type === 'image' ? 1 : 0);
+        gl.uniform1f(uLoc.shape1, s1.shapeId || 0);
+        gl.uniform1f(uLoc.weight1, s1.weight);
+      } else {
+        gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
+        gl.uniform1f(uLoc.weight1, 0.0);
+      }
 
       // Bind Slot 2
       gl.activeTexture(gl.TEXTURE2);
-      gl.bindTexture(gl.TEXTURE_2D, topSlots[2].type === 'image' ? topSlots[2].texture : fallbackTex);
-      gl.uniform1i(uLoc.tex2, 2);
-      gl.uniform1i(uLoc.type2, topSlots[2].type === 'image' ? 1 : 0);
-      gl.uniform1f(uLoc.shape2, topSlots[2].shapeId || 0);
-      gl.uniform1f(uLoc.weight2, topSlots[2].weight);
+      if (s2) {
+        gl.bindTexture(gl.TEXTURE_2D, s2.type === 'image' ? s2.texture : fallbackTex);
+        gl.uniform1i(uLoc.tex2, 2);
+        gl.uniform1i(uLoc.type2, s2.type === 'image' ? 1 : 0);
+        gl.uniform1f(uLoc.shape2, s2.shapeId || 0);
+        gl.uniform1f(uLoc.weight2, s2.weight);
+      } else {
+        gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
+        gl.uniform1f(uLoc.weight2, 0.0);
+      }
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
   </script>
