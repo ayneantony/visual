@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kaleidoscope Mix Studio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050508;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #f3f4f6;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Setup Overlay */
+    #setup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 7, 14, 0.84);
+      backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      z-index: 20;
+      transition: opacity 0.4s ease;
+    }
+    #setup-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .studio-panel {
+      width: 100%;
+      max-width: 860px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: rgba(17, 20, 34, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+    .studio-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .studio-header h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .studio-header p {
+      font-size: 0.88rem;
+      color: #9ca3af;
+      margin-top: 0.2rem;
+    }
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(129, 140, 248, 0.5);
+      color: #e0e7ff;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-btn:hover {
+      background: rgba(99, 102, 241, 0.35);
+      transform: translateY(-1px);
+    }
+    #image-input { display: none; }
+
+    /* Items Grid */
+    .section-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 0.75rem;
+    }
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .item-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .item-card.enabled {
+      border-color: rgba(168, 85, 247, 0.6);
+      background: rgba(168, 85, 247, 0.08);
+    }
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-preview {
+      width: 100%;
+      height: 76px;
+      border-radius: 8px;
+      background: #0b0d17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .item-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .item-preview svg {
+      width: 42px;
+      height: 42px;
+      stroke: #c084fc;
+      fill: none;
+      stroke-width: 1.75;
+    }
+    .item-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+    .key-bind-btn {
+      background: #1f2438;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #f9fafb;
+      font-family: monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.28rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      min-width: 54px;
+      text-align: center;
+    }
+    .key-bind-btn.listening {
+      border-color: #f472b6;
+      background: rgba(244, 114, 182, 0.22);
+      color: #fbcfe8;
+    }
+    .remove-btn {
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0.25rem;
+    }
+    .remove-btn:hover { color: #f87171; }
+
+    /* Mix Options Row */
+    .mix-settings {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      background: rgba(0, 0, 0, 0.28);
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .setting-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+    }
+    .setting-box label { color: #d1d5db; font-weight: 500; }
+    .setting-box select, .setting-box input[type="range"] {
+      background: #1f2438;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 0.45rem;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      height: 100%;
+      cursor: pointer;
+    }
+    .start-btn {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .start-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 28px rgba(168, 85, 247, 0.45);
+    }
+
+    /* Live Mode HUD */
+    #live-hud {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(10, 12, 22, 0.72);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 0.6rem 0.9rem;
+      border-radius: 14px;
+      z-index: 10;
+      max-width: 95vw;
+      transition: opacity 0.3s;
+    }
+    #live-hud.visible { display: flex; }
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.8rem;
+      color: #d1d5db;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .hud-pill.active {
+      background: rgba(168, 85, 247, 0.32);
+      border-color: #d8b4fe;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+    }
+    .hud-key {
+      background: rgba(0, 0, 0, 0.45);
+      padding: 0.1rem 0.38rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 700;
+      color: #f9a8d4;
+    }
+    .hud-action {
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      color: #fff;
+      padding: 0.38rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .hud-action:hover { background: rgba(255, 255, 255, 0.22); }
+  </style>
+</head>
+<body>
+  <canvas id="glcanvas"></canvas>
+
+  <!-- Pre-Start Configuration Overlay -->
+  <div id="setup-overlay">
+    <div class="studio-panel">
+      <div class="studio-header">
+        <div>
+          <h1>Kaleidoscope Mix Studio</h1>
+          <p>Select geometric objects, add your own images, and assign keyboard keys to mix them in the tunnel loop.</p>
+        </div>
+        <label class="upload-btn" for="image-input">
+          + Add Images
+          <input id="image-input" type="file" accept="image/*" multiple />
+        </label>
+      </div>
+
+      <div class="section-label">Objects &amp; Uploaded Images (Click Key Button to Rebind)</div>
+      <div class="items-grid" id="items-grid"></div>
+
+      <div class="mix-settings">
+        <div class="setting-box">
+          <label class="checkbox-row">
+            <input type="checkbox" id="auto-loop-toggle" checked />
+            Auto-Cycle Loop (Crossfade Mix)
+          </label>
+        </div>
+        <div class="setting-box">
+          <label for="mix-mode-select">Key Trigger Mode</label>
+          <select id="mix-mode-select">
+            <option value="blend">Blend Mix (Layer up to 3)</option>
+            <option value="solo">Solo Switch (1 at a time)</option>
+          </select>
+        </div>
+        <div class="setting-box">
+          <label for="segments-select">Kaleidoscope Mirrors</label>
+          <select id="segments-select">
+            <option value="6">6 Segments</option>
+            <option value="8" selected>8 Segments</option>
+            <option value="12">12 Segments</option>
+            <option value="16">16 Segments</option>
+          </select>
+        </div>
+        <div class="setting-box">
+          <label for="speed-range">Tunnel &amp; Color Speed</label>
+          <input type="range" id="speed-range" min="0.15" max="1.2" step="0.05" value="0.45" />
+        </div>
+      </div>
+
+      <button class="start-btn" id="start-btn">Start Kaleidoscope Mix</button>
+    </div>
+  </div>
+
+  <!-- Live Keyboard & Mix HUD -->
+  <div id="live-hud"></div>
+
+  <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0.0, 1.0);
+    }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+    precision highp float;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform float u_speed;
+    uniform float u_segments;
+
+    // 3-Slot Visual Mixer Uniforms
+    uniform int u_type0;
+    uniform float u_shape0;
+    uniform float u_weight0;
+    uniform sampler2D u_tex0;
+
+    uniform int u_type1;
+    uniform float u_shape1;
+    uniform float u_weight1;
+    uniform sampler2D u_tex1;
+
+    uniform int u_type2;
+    uniform float u_shape2;
+    uniform float u_weight2;
+    uniform sampler2D u_tex2;
+
+    vec3 paletteA(float t) {
+      vec3 a = vec3(0.5, 0.5, 0.5);
+      vec3 b = vec3(0.5, 0.5, 0.5);
+      vec3 c = vec3(1.0, 1.0, 1.0);
+      vec3 d = vec3(0.263, 0.416, 0.557);
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    vec3 paletteB(float t) {
+      vec3 a = vec3(0.5, 0.5, 0.5);
+      vec3 b = vec3(0.5, 0.5, 0.5);
+      vec3 c = vec3(1.0, 0.7, 0.4);
+      vec3 d = vec3(0.00, 0.15, 0.20);
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    vec3 getSlowColor(float t) {
+      float blend = 0.5 + 0.5 * sin(u_time * 0.09);
+      return mix(paletteA(t), paletteB(t), blend);
+    }
+
+    mat2 rot(float a) {
+      float s = sin(a), c = cos(a);
+      return mat2(c, -s, s, c);
+    }
+
+    // 2D Geometric SDFs
+    float sdCircle(vec2 p, float r) {
+      return length(p) - r;
+    }
+
+    float sdHexagon(vec2 p, float r) {
+      const vec3 k = vec3(-0.8660254, 0.5, 0.57735027);
+      p = abs(p);
+      p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+      p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+      return length(p) * sign(p.y);
+    }
+
+    float sdDiamond(vec2 p, float r) {
+      p = abs(p * rot(0.78539816));
+      vec2 d = p - vec2(r * 0.75);
+      return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+    }
+
+    float sdTriangle(vec2 p, float r) {
+      const float k = 1.7320508;
+      p.x = abs(p.x) - r;
+      p.y = p.y + r / k;
+      if (p.x + k * p.y > 0.0) {
+        p = vec2(p.x - k * p.y, -k * p.x - p.y) * 0.5;
+      }
+      p.x -= clamp(p.x, -2.0 * r, 0.0);
+      return -length(p) * sign(p.y);
+    }
+
+    float sdStar(vec2 p, float r) {
+      float d1 = sdTriangle(p, r * 0.95);
+      float d2 = sdTriangle(vec2(p.x, -p.y), r * 0.95);
+      return min(d1, d2);
+    }
+
+    float sdLotus(vec2 p, float r) {
+      float a = atan(p.y, p.x);
+      float petals = 0.038 * cos(a * 6.0);
+      return length(p) - (r + petals);
+    }
+
+    float evalShape(vec2 p, float r, float id) {
+      if (id < 0.5) return sdCircle(p, r);
+      if (id < 1.5) return sdHexagon(p, r * 0.88);
+      if (id < 2.5) return sdDiamond(p, r * 0.92);
+      if (id < 3.5) return sdTriangle(p, r * 0.95);
+      if (id < 4.5) return sdStar(p, r * 0.95);
+      return sdLotus(p, r * 0.9);
+    }
+
+    vec3 renderShapeGlow(vec2 p, float shapeId, vec3 col) {
+      float d = evalShape(p, 0.16, shapeId);
+      d = sin(d * 14.0 - u_time * 1.1) / 14.0;
+      d = abs(d);
+      d = pow(0.0075 / (d + 0.0012), 1.2);
+      return col * d;
+    }
+
+    vec2 getKaleidoTexUV(vec2 p, float layer) {
+      vec2 raw = p * 2.1 + 0.5 + vec2(layer * 0.17, u_time * 0.05);
+      return 1.0 - abs(mod(raw, 2.0) - 1.0);
+    }
+
+    vec3 styleTexture(vec4 texel, vec3 col) {
+      vec3 tinted = mix(texel.rgb, texel.rgb * col * 1.9, 0.45);
+      return tinted * texel.a * 0.42;
+    }
+
+    void main() {
+      vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+      uv += vec2(sin(u_time * 0.22), cos(u_time * 0.17)) * 0.05;
+
+      float radius = length(uv);
+      float angle = atan(uv.y, uv.x);
+
+      float slice = 6.2831853 / u_segments;
+      angle = mod(angle, slice);
+      angle = abs(angle - slice * 0.5);
+
+      float depth = 0.55 / (radius + 0.1) - u_time * u_speed;
+
+      vec2 p = vec2(
+        abs(fract(depth) - 0.5) * 2.0 - 0.5,
+        abs(fract(angle / slice) - 0.5) * 2.0 - 0.5
+      );
+
+      vec3 finalColor = vec3(0.0);
+
+      for (float i = 0.0; i < 4.0; i++) {
+        p *= rot(u_time * 0.1 + i * 0.45);
+        p = abs(fract(p * 1.35) - 0.5) - 0.25;
+
+        vec3 col = getSlowColor(depth * 0.12 + i * 0.22 + u_time * 0.05);
+        vec2 texUV = getKaleidoTexUV(p, i);
+
+        if (u_weight0 > 0.001) {
+          vec3 layer0 = (u_type0 == 0)
+            ? renderShapeGlow(p, u_shape0, col)
+            : styleTexture(texture2D(u_tex0, texUV), col);
+          finalColor += layer0 * u_weight0;
+        }
+
+        if (u_weight1 > 0.001) {
+          vec3 layer1 = (u_type1 == 0)
+            ? renderShapeGlow(p, u_shape1, col)
+            : styleTexture(texture2D(u_tex1, texUV), col);
+          finalColor += layer1 * u_weight1;
+        }
+
+        if (u_weight2 > 0.001) {
+          vec3 layer2 = (u_type2 == 0)
+            ? renderShapeGlow(p, u_shape2, col)
+            : styleTexture(texture2D(u_tex2, texUV), col);
+          finalColor += layer2 * u_weight2;
+        }
+      }
+
+      // Prevent over-saturation when multiple layers blend together
+      finalColor = finalColor / (1.0 + finalColor * 0.18);
+
+      float tunnelCenter = smoothstep(0.0, 0.32, radius);
+      vec3 horizonGlow = getSlowColor(u_time * 0.05 + 0.5) * (1.0 - tunnelCenter) * 0.65;
+      finalColor = finalColor * tunnelCenter + horizonGlow;
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  </script>
+
+  <script>
+    const canvas = document.getElementById('glcanvas');
+    const gl = canvas.getContext('webgl');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    }
+
+    const program = gl.createProgram();
+    gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vertex-shader').text));
+    gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fragment-shader').text));
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+    const posLoc = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+    // Uniform locations
+    const uLoc = {
+      resolution: gl.getUniformLocation(program, 'u_resolution'),
+      time: gl.getUniformLocation(program, 'u_time'),
+      speed: gl.getUniformLocation(program, 'u_speed'),
+      segments: gl.getUniformLocation(program, 'u_segments'),
+      type0: gl.getUniformLocation(program, 'u_type0'),
+      shape0: gl.getUniformLocation(program, 'u_shape0'),
+      weight0: gl.getUniformLocation(program, 'u_weight0'),
+      tex0: gl.getUniformLocation(program, 'u_tex0'),
+      type1: gl.getUniformLocation(program, 'u_type1'),
+      shape1: gl.getUniformLocation(program, 'u_shape1'),
+      weight1: gl.getUniformLocation(program, 'u_weight1'),
+      tex1: gl.getUniformLocation(program, 'u_tex1'),
+      type2: gl.getUniformLocation(program, 'u_type2'),
+      shape2: gl.getUniformLocation(program, 'u_shape2'),
+      weight2: gl.getUniformLocation(program, 'u_weight2'),
+      tex2: gl.getUniformLocation(program, 'u_tex2')
+    };
+
+    // Fallback 1x1 pixel texture so samplers are always valid
+    function createFallbackTexture() {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      return tex;
+    }
+    const fallbackTex = createFallbackTexture();
+
+    function createTextureFromImage(img) {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      return tex;
+    }
+
+    // Built-in geometric objects
+    const shapeSVGs = [
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+      '<svg viewBox="0 0 24 24"><polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5"/></svg>',
+      '<svg viewBox="0 0 24 24"><polygon points="12,3 21,12 12,21 3,12"/></svg>',
+      '<svg viewBox="0 0 24 24"><polygon points="12,4 21,19 3,19"/></svg>',
+      '<svg viewBox="0 0 24 24"><polygon points="12,3 19,17 5,17"/><polygon points="12,21 19,7 5,7"/></svg>',
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="6" r="3"/><circle cx="17" cy="9" r="3"/><circle cx="17" cy="15" r="3"/><circle cx="12" cy="18" r="3"/><circle cx="7" cy="15" r="3"/><circle cx="7" cy="9" r="3"/></svg>'
+    ];
+
+    const deck = [
+      { id: 's0', name: 'Circle', type: 'shape', shapeId: 0, key: 'Q', enabled: true, weight: 1.0, targetWeight: 1.0 },
+      { id: 's1', name: 'Hexagon', type: 'shape', shapeId: 1, key: 'W', enabled: true, weight: 0.0, targetWeight: 0.0 },
+      { id: 's2', name: 'Diamond', type: 'shape', shapeId: 2, key: 'E', enabled: true, weight: 0.0, targetWeight: 0.0 },
+      { id: 's3', name: 'Triangle', type: 'shape', shapeId: 3, key: 'R', enabled: true, weight: 0.0, targetWeight: 0.0 },
+      { id: 's4', name: '6-Point Star', type: 'shape', shapeId: 4, key: 'T', enabled: false, weight: 0.0, targetWeight: 0.0 },
+      { id: 's5', name: 'Lotus Mandala', type: 'shape', shapeId: 5, key: 'Y', enabled: false, weight: 0.0, targetWeight: 0.0 }
+    ];
+
+    const defaultImageKeys = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
+    let listeningItemId = null;
+    let isStarted = false;
+    let autoLoop = true;
+    let mixMode = 'blend';
+    let manualOverrideTimer = 0;
+
+    const itemsGrid = document.getElementById('items-grid');
+    const setupOverlay = document.getElementById('setup-overlay');
+    const liveHud = document.getElementById('live-hud');
+
+    function renderSetupGrid() {
+      itemsGrid.innerHTML = '';
+      deck.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'item-card' + (item.enabled ? ' enabled' : '');
+
+        const top = document.createElement('div');
+        top.className = 'item-top';
+
+        const toggleLabel = document.createElement('label');
+        toggleLabel.style.cssText = 'display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = item.enabled;
+        cb.addEventListener('change', () => {
+          item.enabled = cb.checked;
+          if (!item.enabled) {
+            item.targetWeight = 0;
+          }
+          renderSetupGrid();
+        });
+        toggleLabel.appendChild(cb);
+        toggleLabel.appendChild(document.createTextNode('In Mix'));
+        top.appendChild(toggleLabel);
+
+        if (item.type === 'image') {
+          const rm = document.createElement('button');
+          rm.className = 'remove-btn';
+          rm.textContent = '×';
+          rm.title = 'Remove image';
+          rm.addEventListener('click', () => {
+            const idx = deck.indexOf(item);
+            if (idx > -1) deck.splice(idx, 1);
+            renderSetupGrid();
+          });
+          top.appendChild(rm);
+        }
+
+        const preview = document.createElement('div');
+        preview.className = 'item-preview';
+        if (item.type === 'shape') {
+          preview.innerHTML = shapeSVGs[item.shapeId];
+        } else {
+          const imgEl = document.createElement('img');
+          imgEl.src = item.thumbUrl;
+          preview.appendChild(imgEl);
+        }
+
+        const controls = document.createElement('div');
+        controls.className = 'item-controls';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'item-name';
+        nameEl.textContent = item.name;
+
+        const keyBtn = document.createElement('button');
+        keyBtn.className = 'key-bind-btn' + (listeningItemId === item.id ? ' listening' : '');
+        keyBtn.textContent = listeningItemId === item.id ? 'Press Key' : `Key: ${item.key}`;
+        keyBtn.addEventListener('click', () => {
+          listeningItemId = item.id;
+          renderSetupGrid();
+        });
+
+        controls.appendChild(nameEl);
+        controls.appendChild(keyBtn);
+
+        card.appendChild(top);
+        card.appendChild(preview);
+        card.appendChild(controls);
+        itemsGrid.appendChild(card);
+      });
+    }
+
+    // Handle Image Uploads
+    document.getElementById('image-input').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const texture = createTextureFromImage(img);
+            const usedKeys = new Set(deck.map((d) => d.key));
+            const nextKey = defaultImageKeys.find((k) => !usedKeys.has(k)) || '1';
+            deck.push({
+              id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              name: file.name.replace(/\.[^/.]+$/, ''),
+              type: 'image',
+              texture: texture,
+              thumbUrl: ev.target.result,
+              key: nextKey,
+              enabled: true,
+              weight: 0.0,
+              targetWeight: 0.0
+            });
+            renderSetupGrid();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    });
+
+    function buildLiveHud() {
+      liveHud.innerHTML = '';
+      const activeItems = deck.filter((d) => d.enabled);
+      activeItems.forEach((item) => {
+        const pill = document.createElement('div');
+        pill.className = 'hud-pill' + (item.targetWeight > 0.25 ? ' active' : '');
+        pill.dataset.id = item.id;
+        pill.innerHTML = `<span class="hud-key">${item.key}</span><span>${item.name}</span>`;
+        pill.addEventListener('click', () => triggerItem(item));
+        liveHud.appendChild(pill);
+      });
+
+      const autoBtn = document.createElement('button');
+      autoBtn.className = 'hud-action';
+      autoBtn.textContent = autoLoop ? 'Auto-Loop: ON' : 'Auto-Loop: OFF';
+      autoBtn.addEventListener('click', () => {
+        autoLoop = !autoLoop;
+        document.getElementById('auto-loop-toggle').checked = autoLoop;
+        buildLiveHud();
+      });
+      liveHud.appendChild(autoBtn);
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'hud-action';
+      editBtn.textContent = 'Edit Mix (Esc)';
+      editBtn.addEventListener('click', openSetup);
+      liveHud.appendChild(editBtn);
+    }
+
+    function openSetup() {
+      isStarted = false;
+      setupOverlay.classList.remove('hidden');
+      liveHud.classList.remove('visible');
+      renderSetupGrid();
+    }
+
+    function startMix() {
+      // Ensure at least one item is enabled
+      if (!deck.some((d) => d.enabled)) {
+        deck[0].enabled = true;
+      }
+      autoLoop = document.getElementById('auto-loop-toggle').checked;
+      mixMode = document.getElementById('mix-mode-select').value;
+
+      const enabledItems = deck.filter((d) => d.enabled);
+      deck.forEach((d) => (d.targetWeight = 0));
+      enabledItems[0].targetWeight = 1.0;
+
+      isStarted = true;
+      listeningItemId = null;
+      setupOverlay.classList.add('hidden');
+      liveHud.classList.add('visible');
+      buildLiveHud();
+    }
+
+    document.getElementById('start-btn').addEventListener('click', startMix);
+
+    function triggerItem(targetItem) {
+      if (!targetItem.enabled) {
+        targetItem.enabled = true;
+      }
+      manualOverrideTimer = 4.5; // Pause auto-advance briefly after manual key trigger
+
+      if (mixMode === 'solo') {
+        deck.forEach((item) => {
+          item.targetWeight = item.id === targetItem.id ? 1.0 : 0.0;
+        });
+      } else {
+        // Blend Mix: toggle or boost up to 3 active items
+        if (targetItem.targetWeight > 0.5) {
+          const activeCount = deck.filter((d) => d.targetWeight > 0.2).length;
+          if (activeCount > 1) {
+            targetItem.targetWeight = 0.0;
+          }
+        } else {
+          targetItem.targetWeight = 1.0;
+          // Keep at most 3 highest-weighted items active
+          const active = deck.filter((d) => d.targetWeight > 0.2);
+          if (active.length > 3) {
+            const oldest = active.find((d) => d.id !== targetItem.id);
+            if (oldest) oldest.targetWeight = 0.0;
+          }
+        }
+      }
+      updateHudHighlight();
+    }
+
+    function updateHudHighlight() {
+      const pills = liveHud.querySelectorAll('.hud-pill');
+      pills.forEach((pill) => {
+        const item = deck.find((d) => d.id === pill.dataset.id);
+        if (item) {
+          pill.classList.toggle('active', item.targetWeight > 0.25);
+        }
+      });
+    }
+
+    // Keyboard Controls
+    window.addEventListener('keydown', (e) => {
+      // Rebinding key in Setup Studio
+      if (listeningItemId) {
+        e.preventDefault();
+        if (e.key !== 'Escape') {
+          const cleanKey = e.key.length === 1 ? e.key.toUpperCase() : e.code.replace('Key', '').replace('Digit', '');
+          const item = deck.find((d) => d.id === listeningItemId);
+          if (item && cleanKey) item.key = cleanKey;
+        }
+        listeningItemId = null;
+        renderSetupGrid();
+        return;
+      }
+
+      if (e.key === 'Escape' && isStarted) {
+        openSetup();
+        return;
+      }
+
+      if (!isStarted) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        autoLoop = !autoLoop;
+        document.getElementById('auto-loop-toggle').checked = autoLoop;
+        buildLiveHud();
+        return;
+      }
+
+      const pressed = e.key.toUpperCase();
+      const matched = deck.find((item) => item.key.toUpperCase() === pressed);
+      if (matched) {
+        triggerItem(matched);
+      }
+    });
+
+    renderSetupGrid();
+
+    // Animation & Auto-Mix Loop
+    let lastTime = 0;
+    let loopPhase = 0;
+
+    function render(now) {
+      const timeSec = now * 0.001;
+      const dt = Math.min(0.1, timeSec - lastTime);
+      lastTime = timeSec;
+
+      if (manualOverrideTimer > 0) {
+        manualOverrideTimer -= dt;
+      }
+
+      const enabledItems = deck.filter((d) => d.enabled);
+
+      // Auto-Cycle Mix Progression
+      if (isStarted && autoLoop && manualOverrideTimer <= 0 && enabledItems.length > 1) {
+        loopPhase += dt * 0.28;
+        const count = enabledItems.length;
+        const idxA = Math.floor(loopPhase) % count;
+        const idxB = (idxA + 1) % count;
+        const frac = loopPhase - Math.floor(loopPhase);
+        // Smooth crossfade curve
+        const blend = frac * frac * (3.0 - 2.0 * frac);
+
+        deck.forEach((d) => (d.targetWeight = 0));
+        enabledItems[idxA].targetWeight = 1.0 - blend * 0.7;
+        enabledItems[idxB].targetWeight = blend;
+        updateHudHighlight();
+      }
+
+      // Smoothly interpolate all item weights
+      deck.forEach((item) => {
+        item.weight += (item.targetWeight - item.weight) * Math.min(1.0, dt * 4.5);
+      });
+
+      // Pick top 3 weighted items for the 3 shader slots
+      const topSlots = [...deck]
+        .filter((d) => d.weight > 0.002)
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 3);
+
+      while (topSlots.length < 3) {
+        topSlots.push({ type: 'shape', shapeId: 0, weight: 0.0, texture: fallbackTex });
+      }
+
+      gl.uniform2f(uLoc.resolution, canvas.width, canvas.height);
+      gl.uniform1f(uLoc.time, timeSec);
+      gl.uniform1f(uLoc.speed, parseFloat(document.getElementById('speed-range').value));
+      gl.uniform1f(uLoc.segments, parseFloat(document.getElementById('segments-select').value));
+
+      // Bind Slot 0
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, topSlots[0].type === 'image' ? topSlots[0].texture : fallbackTex);
+      gl.uniform1i(uLoc.tex0, 0);
+      gl.uniform1i(uLoc.type0, topSlots[0].type === 'image' ? 1 : 0);
+      gl.uniform1f(uLoc.shape0, topSlots[0].shapeId || 0);
+      gl.uniform1f(uLoc.weight0, topSlots[0].weight);
+
+      // Bind Slot 1
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, topSlots[1].type === 'image' ? topSlots[1].texture : fallbackTex);
+      gl.uniform1i(uLoc.tex1, 1);
+      gl.uniform1i(uLoc.type1, topSlots[1].type === 'image' ? 1 : 0);
+      gl.uniform1f(uLoc.shape1, topSlots[1].shapeId || 0);
+      gl.uniform1f(uLoc.weight1, topSlots[1].weight);
+
+      // Bind Slot 2
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, topSlots[2].type === 'image' ? topSlots[2].texture : fallbackTex);
+      gl.uniform1i(uLoc.tex2, 2);
+      gl.uniform1i(uLoc.type2, topSlots[2].type === 'image' ? 1 : 0);
+      gl.uniform1f(uLoc.shape2, topSlots[2].shapeId || 0);
+      gl.uniform1f(uLoc.weight2, topSlots[2].weight);
+
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
