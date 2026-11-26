@@ -2,22 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kaleidoscope Mix Studio (120 FPS Optimized)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kaleidoscope Loop Studio — 100 Distinct Figures &amp; Surface Textures</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body, html {
       width: 100%;
       height: 100%;
       overflow: hidden;
       background: #050508;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #f3f4f6;
+      color: #f5f3ff;
+      overscroll-behavior: none;
     }
     canvas {
       display: block;
       width: 100vw;
       height: 100vh;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* Floating Top-Left Toggle Button for Instructions & FPS (Visible only after Start) */
+    #toggle-ui-btn {
+      position: fixed;
+      top: 0.85rem;
+      left: 0.95rem;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 36px;
+      padding: 0.4rem 0.82rem;
+      border-radius: 9px;
+      background: rgba(11, 9, 24, 0.88);
+      border: 1px solid rgba(192, 132, 252, 0.42);
+      color: #f3e8ff;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    #toggle-ui-btn.active-session {
+      display: inline-flex;
+    }
+    #toggle-ui-btn:hover,
+    #toggle-ui-btn:focus-visible {
+      background: rgba(26, 18, 52, 0.95);
+      border-color: rgba(240, 171, 252, 0.8);
+      outline: none;
+    }
+    #toggle-ui-btn.ui-hidden-state {
+      opacity: 0.26;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    #toggle-ui-btn.ui-hidden-state:hover,
+    #toggle-ui-btn.ui-hidden-state:focus-visible {
+      opacity: 1.0;
+    }
+    #toggle-ui-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: #fde68a;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
     }
 
     /* Live FPS Counter */
@@ -25,30 +82,32 @@
       position: fixed;
       top: 0.85rem;
       right: 0.95rem;
-      background: rgba(10, 12, 22, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: #a7f3d0;
+      background: rgba(11, 9, 24, 0.86);
+      border: 1px solid rgba(192, 132, 252, 0.35);
+      color: #fde68a;
       font-family: monospace;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
-      padding: 0.3rem 0.6rem;
+      padding: 0.36rem 0.7rem;
       border-radius: 8px;
       z-index: 15;
       pointer-events: none;
       display: none;
     }
-    #fps-badge.visible { display: block; }
+    #fps-badge.visible {
+      display: block;
+    }
 
-    /* Setup Overlay */
+    /* Pre-Start Visionary Loop Studio Setup Overlay */
     #setup-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(6, 7, 14, 0.9);
+      background: radial-gradient(circle at 50% 25%, #160f2e 0%, #050508 75%);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.25rem;
-      z-index: 20;
+      padding: 1rem;
+      z-index: 25;
       transition: opacity 0.25s ease;
     }
     #setup-overlay.hidden {
@@ -57,96 +116,181 @@
     }
     .studio-panel {
       width: 100%;
-      max-width: 880px;
-      max-height: 92vh;
+      max-width: 1080px;
+      max-height: 94vh;
       overflow-y: auto;
-      background: #111422;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 16px;
-      padding: 1.65rem;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      background: rgba(14, 11, 28, 0.96);
+      border: 1px solid rgba(192, 132, 252, 0.28);
+      border-radius: 18px;
+      padding: 1.35rem;
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.85);
     }
     .studio-header {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1rem;
+      gap: 0.8rem;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.8rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
     .studio-header h1 {
-      font-size: 1.45rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #fde047, #f472b6, #c084fc, #38bdf8, #4ade80);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .studio-header p {
-      font-size: 0.88rem;
-      color: #9ca3af;
+      font-size: 0.83rem;
+      color: #c4b5fd;
       margin-top: 0.2rem;
     }
-    .upload-btn {
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .controls-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(192, 132, 252, 0.26);
+      border-radius: 10px;
+      padding: 0.52rem 0.8rem;
+      margin-bottom: 0.95rem;
+      font-size: 0.77rem;
+      color: #e9d5ff;
+    }
+    .controls-banner span.badge {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(253, 224, 71, 0.4);
+      color: #fde047;
+      font-family: monospace;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 5px;
+    }
+    .upload-btn, .utility-btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      background: rgba(99, 102, 241, 0.22);
-      border: 1px solid rgba(129, 140, 248, 0.55);
-      color: #e0e7ff;
-      padding: 0.6rem 1rem;
-      border-radius: 10px;
-      font-size: 0.9rem;
+      gap: 0.4rem;
+      background: rgba(168, 85, 247, 0.24);
+      border: 1px solid rgba(216, 180, 254, 0.55);
+      color: #f3e8ff;
+      padding: 0.5rem 0.88rem;
+      border-radius: 9px;
+      font-size: 0.81rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s ease;
     }
-    .upload-btn:hover { background: rgba(99, 102, 241, 0.38); }
-    #image-input { display: none; }
+    .upload-btn:hover, .utility-btn:hover {
+      background: rgba(168, 85, 247, 0.42);
+    }
+    #image-input {
+      display: none;
+    }
 
-    /* Items Grid */
+    /* Filter & Search Bar for 100 Figures & Textures */
+    .deck-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.55rem;
+      margin-bottom: 0.72rem;
+    }
     .section-label {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #9ca3af;
-      margin-bottom: 0.75rem;
+      color: #a78bfa;
+      font-weight: 700;
     }
+    .filter-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.42rem;
+      align-items: center;
+    }
+    .filter-controls input,
+    .filter-controls select {
+      background: #191430;
+      color: #f3e8ff;
+      border: 1px solid rgba(192, 132, 252, 0.35);
+      border-radius: 8px;
+      padding: 0.35rem 0.62rem;
+      font-size: 0.79rem;
+    }
+    .mini-chip-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #e9d5ff;
+      padding: 0.33rem 0.6rem;
+      border-radius: 7px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .mini-chip-btn:hover {
+      background: rgba(168, 85, 247, 0.32);
+    }
+
+    /* 100 Figures & Textures Grid */
     .items-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-      gap: 0.85rem;
-      margin-bottom: 1.35rem;
+      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      gap: 0.62rem;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+      margin-bottom: 1.1rem;
     }
     .item-card {
       position: relative;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.035);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 0.75rem;
+      border-radius: 11px;
+      padding: 0.55rem;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
+      gap: 0.4rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
     .item-card.enabled {
-      border-color: rgba(168, 85, 247, 0.65);
-      background: rgba(168, 85, 247, 0.09);
+      border-color: rgba(232, 121, 249, 0.8);
+      background: rgba(168, 85, 247, 0.16);
     }
     .item-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-size: 0.71rem;
+      color: #c4b5fd;
+    }
+    .tex-pill {
+      font-size: 0.63rem;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #bae6fd;
+      padding: 0.05rem 0.34rem;
+      border-radius: 4px;
     }
     .item-preview {
       width: 100%;
-      height: 74px;
-      border-radius: 8px;
-      background: #0b0d17;
+      height: 54px;
+      border-radius: 7px;
+      background: radial-gradient(circle at center, #1b1136 0%, #090612 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      position: relative;
     }
     .item-preview img {
       width: 100%;
@@ -154,15 +298,26 @@
       object-fit: cover;
     }
     .item-preview svg {
-      width: 40px;
-      height: 40px;
-      stroke: #c084fc;
+      width: 38px;
+      height: 38px;
+      stroke: #f0abfc;
       fill: none;
-      stroke-width: 1.75;
+      stroke-width: 1.5;
+    }
+    .cat-tag {
+      position: absolute;
+      bottom: 3px;
+      right: 4px;
+      font-size: 0.6rem;
+      background: rgba(5, 5, 12, 0.82);
+      color: #fde68a;
+      padding: 0.07rem 0.3rem;
+      border-radius: 4px;
     }
     .item-name {
-      font-size: 0.84rem;
-      font-weight: 500;
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: #f3e8ff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -171,64 +326,72 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.4rem;
+      gap: 0.3rem;
     }
     .key-bind-btn {
-      background: #1f2438;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      color: #f9fafb;
+      background: #1c1635;
+      border: 1px solid rgba(216, 180, 254, 0.3);
+      color: #fde68a;
       font-family: monospace;
-      font-size: 0.82rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      padding: 0.26rem 0.55rem;
-      border-radius: 6px;
+      padding: 0.18rem 0.4rem;
+      border-radius: 5px;
       cursor: pointer;
-      min-width: 54px;
+      min-width: 46px;
       text-align: center;
     }
     .key-bind-btn.listening {
       border-color: #f472b6;
-      background: rgba(244, 114, 182, 0.25);
-      color: #fbcfe8;
+      background: rgba(244, 114, 182, 0.28);
+      color: #fff;
     }
     .remove-btn {
       background: transparent;
       border: none;
       color: #9ca3af;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       cursor: pointer;
-      padding: 0 0.25rem;
+      padding: 0 0.2rem;
     }
-    .remove-btn:hover { color: #f87171; }
+    .remove-btn:hover {
+      color: #f87171;
+    }
 
     /* Mix Options Row */
     .mix-settings {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-      gap: 0.9rem;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 0.95rem;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 0.72rem;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.82rem;
       border-radius: 12px;
-      margin-bottom: 1.35rem;
+      margin-bottom: 1.05rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .setting-box {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
-      font-size: 0.83rem;
+      gap: 0.28rem;
+      font-size: 0.77rem;
     }
-    .setting-box label { color: #d1d5db; font-weight: 500; }
-    .setting-box select, .setting-box input[type="range"] {
-      background: #1f2438;
+    .setting-box label {
+      color: #ddd6fe;
+      font-weight: 500;
+    }
+    .setting-box select,
+    .setting-box input[type="range"] {
+      background: #191430;
       color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(192, 132, 252, 0.28);
       border-radius: 8px;
-      padding: 0.42rem;
+      padding: 0.36rem;
+      font-size: 0.79rem;
     }
     .checkbox-row {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.46rem;
       height: 100%;
       cursor: pointer;
     }
@@ -237,130 +400,221 @@
       padding: 0.88rem;
       border: none;
       border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
+      font-size: 1.02rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
       color: #fff;
-      background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+      background: linear-gradient(90deg, #7c3aed, #ec4899, #eab308, #06b6d4);
       cursor: pointer;
+      box-shadow: 0 8px 26px rgba(236, 72, 153, 0.38);
+      transition: filter 0.15s ease, transform 0.1s ease;
     }
-    .start-btn:hover { filter: brightness(1.08); }
+    .start-btn:hover {
+      filter: brightness(1.12);
+    }
+    .start-btn:active {
+      transform: scale(0.995);
+    }
 
-    /* Live Mode HUD (No backdrop-filter for maximum GPU FPS) */
+    /* Live Mode Bottom HUD (Zero backdrop-filter for maximum 120 FPS throughput) */
     #live-hud {
       position: fixed;
-      bottom: 0.95rem;
+      bottom: 0.8rem;
       left: 50%;
       transform: translateX(-50%);
       display: none;
-      flex-wrap: wrap;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      background: rgba(11, 13, 24, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 0.55rem 0.85rem;
+      gap: 0.4rem;
+      background: rgba(10, 8, 22, 0.92);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      padding: 0.52rem 0.82rem;
       border-radius: 14px;
       z-index: 10;
       max-width: 96vw;
     }
-    #live-hud.visible { display: flex; }
-    .hud-pill {
-      display: inline-flex;
+    #live-hud.visible {
+      display: flex;
+    }
+    .hud-row {
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 0.38rem;
-      padding: 0.32rem 0.62rem;
+    }
+    .hud-instructions {
+      font-size: 0.71rem;
+      color: #c4b5fd;
+      letter-spacing: 0.02em;
+      text-align: center;
+      padding-bottom: 0.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      width: 100%;
+    }
+    .hud-instructions strong {
+      color: #fde047;
+      font-family: monospace;
+    }
+    .hud-select {
+      background: #1a1434;
+      border: 1px solid rgba(216, 180, 254, 0.42);
+      color: #fde68a;
+      padding: 0.29rem 0.52rem;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      font-size: 0.8rem;
-      color: #d1d5db;
+      font-size: 0.77rem;
+      font-weight: 600;
+      max-width: 230px;
+      cursor: pointer;
+    }
+    .hud-action {
+      background: rgba(139, 92, 246, 0.24);
+      border: 1px solid rgba(192, 132, 252, 0.34);
+      color: #f3e8ff;
+      padding: 0.29rem 0.58rem;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
       cursor: pointer;
       user-select: none;
     }
-    .hud-pill.active {
-      background: rgba(168, 85, 247, 0.36);
-      border-color: #d8b4fe;
-      color: #fff;
+    .hud-action:hover {
+      background: rgba(139, 92, 246, 0.42);
     }
-    .hud-key {
-      background: rgba(0, 0, 0, 0.5);
-      padding: 0.1rem 0.36rem;
-      border-radius: 4px;
-      font-family: monospace;
-      font-weight: 700;
-      color: #f9a8d4;
+    .hud-action.highlight {
+      border-color: #fde047;
+      color: #fde047;
     }
-    .hud-action {
-      background: rgba(255, 255, 255, 0.12);
-      border: none;
-      color: #fff;
-      padding: 0.36rem 0.68rem;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-    .hud-action:hover { background: rgba(255, 255, 255, 0.22); }
   </style>
 </head>
 <body>
   <canvas id="glcanvas"></canvas>
+
+  <!-- Floating Top-Left Toggle Button for Instructions & FPS (Only shown after starting) -->
+  <button id="toggle-ui-btn" type="button" aria-label="Hide instructions and FPS" title="Toggle Instructions &amp; FPS (H)">
+    <svg viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.4 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3.6 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+    <span>Hide UI (H)</span>
+  </button>
+
+  <!-- Top-Right Live FPS Counter -->
   <div id="fps-badge">120 FPS</div>
 
-  <!-- Pre-Start Configuration Overlay -->
+  <!-- Pre-Start Visionary Loop Studio Setup Overlay -->
   <div id="setup-overlay">
     <div class="studio-panel">
       <div class="studio-header">
         <div>
-          <h1>Kaleidoscope Mix Studio</h1>
-          <p>Select geometric objects, add your own images, and assign keyboard keys to mix them in the tunnel loop.</p>
+          <h1>Kaleidoscope Loop Studio — 100 Figures &amp; Surface Textures</h1>
+          <p>Forms recognizable figures (Lotus, Butterfly, Galaxy, Snowflake, Dragon Scales, Stained Glass, Marble, Honeycomb &amp; 90+ more) across 8 surface textures at 120 FPS.</p>
         </div>
-        <label class="upload-btn" for="image-input">
-          + Add Images
-          <input id="image-input" type="file" accept="image/*" multiple />
-        </label>
+        <div class="header-actions">
+          <button type="button" class="utility-btn" id="random-setup-btn">🎲 Random Figure</button>
+          <label class="upload-btn" for="image-input">
+            + Upload Photos
+            <input id="image-input" type="file" accept="image/*" multiple />
+          </label>
+        </div>
       </div>
 
-      <div class="section-label">Objects &amp; Uploaded Images (Click Key Button to Rebind)</div>
+      <div class="controls-banner">
+        <span>Controls:</span>
+        <span class="badge">Mouse / Touch / Gyro</span><span>Steer 3D Loop • Hold / Scroll to Boost</span>
+        <span class="badge">N</span><span>Next Figure (100)</span>
+        <span class="badge">M</span><span>Next Color Realm (20)</span>
+        <span class="badge">R</span><span>Random Figure</span>
+        <span class="badge">H</span><span>Hide UI</span>
+      </div>
+
+      <div class="deck-toolbar">
+        <div class="section-label" id="pattern-count-label">100 Figures &amp; Textures (Select Any Set to Loop or Trigger Live)</div>
+        <div class="filter-controls">
+          <input type="text" id="pattern-search" placeholder="Search flower, butterfly, marble..." />
+          <select id="pattern-cat-filter">
+            <option value="ALL">All 100 Figures &amp; Textures</option>
+            <option value="Botanical & Flowers">Botanical &amp; Flowers (15)</option>
+            <option value="Creatures & Wings">Creatures &amp; Wings (15)</option>
+            <option value="Cosmic & Spirals">Cosmic &amp; Spirals (15)</option>
+            <option value="Sacred & Symbolic">Sacred &amp; Symbolic (15)</option>
+            <option value="Crystal & Geo">Crystal &amp; Geo (15)</option>
+            <option value="Organic Textures">Organic Textures (15)</option>
+            <option value="Tech & Abstract">Tech &amp; Abstract (10)</option>
+            <option value="Custom Image">Custom Images</option>
+          </select>
+          <button type="button" class="mini-chip-btn" id="select-all-btn">Select All 100</button>
+          <button type="button" class="mini-chip-btn" id="select-diverse-btn">Diverse 15 Mix</button>
+        </div>
+      </div>
       <div class="items-grid" id="items-grid"></div>
 
       <div class="mix-settings">
         <div class="setting-box">
+          <label for="realm-select">Color &amp; Tunnel Realm (20)</label>
+          <select id="realm-select"></select>
+        </div>
+        <div class="setting-box">
           <label class="checkbox-row">
             <input type="checkbox" id="auto-loop-toggle" checked />
-            Auto-Cycle Loop (Crossfade)
+            Auto-Morph Figures &amp; Textures
           </label>
         </div>
         <div class="setting-box">
-          <label for="mix-mode-select">Key Trigger Mode</label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="auto-fps-toggle" checked />
+            Auto-FPS Adaptive Boost (60-120 FPS)
+          </label>
+        </div>
+        <div class="setting-box">
+          <label class="checkbox-row">
+            <input type="checkbox" id="gyro-toggle" checked />
+            Mobile Gyroscope Tilt Steering
+          </label>
+        </div>
+        <div class="setting-box">
+          <label for="mix-mode-select">Manual Trigger Mode</label>
           <select id="mix-mode-select">
-            <option value="blend">Blend Mix (Layer up to 3)</option>
-            <option value="solo">Solo Switch (1 at a time)</option>
+            <option value="blend" selected>Smooth Figure Morph</option>
+            <option value="solo">Instant Solo Figure</option>
           </select>
+        </div>
+        <div class="setting-box">
+          <label for="brightness-range">Brightness Level</label>
+          <input type="range" id="brightness-range" min="0.4" max="1.6" step="0.05" value="1.0" />
+        </div>
+        <div class="setting-box">
+          <label for="color-speed-range">Psychedelic Color Speed</label>
+          <input type="range" id="color-speed-range" min="0.3" max="3.0" step="0.1" value="1.3" />
+        </div>
+        <div class="setting-box">
+          <label for="speed-range">Loop Cruise Speed</label>
+          <input type="range" id="speed-range" min="0.1" max="1.6" step="0.05" value="0.50" />
+        </div>
+        <div class="setting-box">
+          <label for="steer-range">Mouse / Touch / Gyro Sensitivity</label>
+          <input type="range" id="steer-range" min="0.3" max="2.2" step="0.1" value="1.1" />
         </div>
         <div class="setting-box">
           <label for="segments-select">Kaleidoscope Mirrors</label>
           <select id="segments-select">
-            <option value="6">6 Segments</option>
-            <option value="8" selected>8 Segments</option>
-            <option value="12">12 Segments</option>
-            <option value="16">16 Segments</option>
+            <option value="4">4 Mirrors</option>
+            <option value="6">6 Mirrors</option>
+            <option value="8" selected>8 Mirrors (Clear Figures)</option>
+            <option value="10">10 Mirrors</option>
+            <option value="12">12 Mirrors</option>
+            <option value="16">16 Mirrors</option>
           </select>
         </div>
         <div class="setting-box">
-          <label for="scale-select">Render Resolution (FPS)</label>
+          <label for="scale-select">Base Render Resolution (FPS)</label>
           <select id="scale-select">
-            <option value="0.65">Max 120 FPS Boost (65%)</option>
-            <option value="0.8" selected>Ultra Smooth (80%)</option>
-            <option value="1.0">Native Full Res (100%)</option>
+            <option value="0.5">Ultra 120 FPS Mobile (50%)</option>
+            <option value="0.65" selected>High-Speed 120 FPS (65%)</option>
+            <option value="0.8">Balanced HD (80%)</option>
+            <option value="1.0">Native 1.0x (100%)</option>
           </select>
-        </div>
-        <div class="setting-box">
-          <label for="speed-range">Tunnel &amp; Color Speed</label>
-          <input type="range" id="speed-range" min="0.15" max="1.2" step="0.05" value="0.45" />
         </div>
       </div>
 
-      <button class="start-btn" id="start-btn">Start Kaleidoscope Mix</button>
+      <button class="start-btn" id="start-btn" type="button">Start Kaleidoscope Loop (100 Figures &amp; Textures)</button>
     </div>
   </div>
 
@@ -375,208 +629,483 @@
   </script>
 
   <script id="fragment-shader" type="x-shader/x-fragment">
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
     precision highp float;
-    uniform vec2 u_resolution;
-    uniform float u_time;
-    uniform float u_speed;
-    uniform float u_segments;
-    uniform float u_palBlend;
+    #else
+    precision mediump float;
+    #endif
 
-    // Precomputed per-layer rotation matrices (eliminates 4x per-pixel sin/cos)
+    uniform vec2 u_resolution;
+    uniform float u_travel;
+    uniform float u_roll;
+    uniform vec2 u_steer;
+    uniform float u_colorTime;
+    uniform float u_segments;
+    uniform float u_brightness;
+    uniform float u_twist;
+    uniform float u_foldMix;
+
+    // Precomputed per-octave rotation matrices on CPU
     uniform mat2 u_rot0;
     uniform mat2 u_rot1;
     uniform mat2 u_rot2;
-    uniform mat2 u_rot3;
 
-    // 3-Slot Visual Mixer Uniforms
+    // Precomputed balanced RGB neon palette vectors on CPU per octave
+    uniform vec3 u_col0;
+    uniform vec3 u_col1;
+    uniform vec3 u_col2;
+    uniform vec3 u_coreCol;
+
+    // 2-Slot High-Speed Crossfade Mixer Uniforms (100 Figures + Surface Textures)
     uniform int u_type0;
-    uniform float u_shape0;
+    uniform float u_fig0;
+    uniform float u_texStyle0;
+    uniform vec4 u_param0;
     uniform float u_weight0;
     uniform sampler2D u_tex0;
 
     uniform int u_type1;
-    uniform float u_shape1;
+    uniform float u_fig1;
+    uniform float u_texStyle1;
+    uniform vec4 u_param1;
     uniform float u_weight1;
     uniform sampler2D u_tex1;
 
-    uniform int u_type2;
-    uniform float u_shape2;
-    uniform float u_weight2;
-    uniform sampler2D u_tex2;
-
-    vec3 getSlowColor(float t) {
-      vec3 c1 = 0.5 + 0.5 * cos(6.283185 * (t + vec3(0.263, 0.416, 0.557)));
-      vec3 c2 = 0.5 + 0.5 * cos(6.283185 * (vec3(1.0, 0.7, 0.4) * t + vec3(0.0, 0.15, 0.20)));
-      return mix(c1, c2, u_palBlend);
+    // Fast triangle-wave rainbow generator
+    vec3 fastPrismWave(float phase) {
+      vec3 f = abs(fract(vec3(phase) + vec3(0.0, 0.333333, 0.666667)) - 0.5) * 2.0;
+      return f * f * (3.0 - 2.0 * f) * 0.85 + 0.08;
     }
 
-    // Fast 2D Geometric SDFs
-    float sdCircle(vec2 p, float r) {
-      return length(p) - r;
+    // Fast 2D procedural organic noise for marble, plasma, smoke, and crystal textures
+    float hash21(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
     }
 
-    float sdHexagon(vec2 p, float r) {
-      const vec3 k = vec3(-0.8660254, 0.5, 0.57735027);
-      p = abs(p);
-      p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
-      p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
-      return length(p) * sign(p.y);
+    float vnoise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      float a = hash21(i);
+      float b = hash21(i + vec2(1.0, 0.0));
+      float c = hash21(i + vec2(0.0, 1.0));
+      float d = hash21(i + vec2(1.0, 1.0));
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
     }
 
-    float sdDiamond(vec2 p, float r) {
-      // 45-degree rotation without matrix multiply
-      vec2 q = abs(vec2(p.x - p.y, p.x + p.y) * 0.70710678);
-      vec2 d = q - vec2(r * 0.75);
-      return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
-    }
+    // =========================================================================
+    // 12 DISTINCT RECOGNIZABLE FIGURE & SURFACE PATTERN GENERATORS (fig 0..11)
+    // =========================================================================
+    // Returns vec2(signedOrUnsignedDist, internalTexturePatternValue)
+    vec2 evalFigure(vec2 p, float figId, vec4 prm, float timePhase) {
+      float r = length(p) + 0.0001;
+      float ang = atan(p.y, p.x);
 
-    float sdTriangle(vec2 p, float r) {
-      const float k = 1.7320508;
-      p.x = abs(p.x) - r;
-      p.y = p.y + r / k;
-      if (p.x + k * p.y > 0.0) {
-        p = vec2(p.x - k * p.y, -k * p.x - p.y) * 0.5;
+      // 0: BOTANICAL FLOWER (Lotus, Rose, Sunflower, Cherry Blossom, Dahlia, Hibiscus)
+      if (figId < 0.5) {
+        float petals = prm.x;
+        float amp = prm.y * 0.24;
+        float coreR = prm.z * 0.26;
+        float twist = prm.w;
+        float p1 = cos(ang * petals + twist);
+        float p2 = cos(ang * petals - twist + 1.5708);
+        float outerBloom = r - (0.28 + amp * abs(p1) + amp * 0.45 * p2);
+        float innerBloom = r - (0.17 + amp * 0.65 * abs(p2));
+        float seedCore = r - coreR * 0.55;
+        float dist = min(abs(outerBloom), min(abs(innerBloom), abs(seedCore)));
+        float vein = sin(r * 45.0 - abs(p1) * 6.0) * 0.5 + 0.5;
+        // Negative interior mask when inside flower petals
+        float fillMask = min(outerBloom, innerBloom);
+        return vec2(fillMask < 0.0 ? -dist : dist, vein);
       }
-      p.x -= clamp(p.x, -2.0 * r, 0.0);
-      return -length(p) * sign(p.y);
+
+      // 1: BUTTERFLY WINGS, HEART & PAISLEY DROPS
+      if (figId < 1.5) {
+        vec2 q = vec2(abs(p.x), p.y);
+        float lobes = prm.x;
+        float wingSpan = prm.y * 0.55;
+        float waist = prm.z;
+        // Heart / Butterfly polar silhouette
+        float theta = atan(q.y, q.x);
+        float wingShape = wingSpan * (0.75 + 0.42 * sin(theta * lobes + prm.w) - waist * 0.35 * cos(theta * 2.0));
+        float dWing = length(q - vec2(0.08, 0.03 * sin(theta * 2.0))) - wingShape;
+        float eyeSpot = length(q - vec2(wingSpan * 0.52, wingSpan * 0.32)) - wingSpan * 0.16;
+        float dist = min(abs(dWing), abs(eyeSpot));
+        float wingVein = sin(theta * 14.0 + r * 28.0) * 0.5 + 0.5;
+        return vec2(dWing < 0.0 ? -dist : dist, wingVein);
+      }
+
+      // 2: PEACOCK FEATHER, THIRD EYE & CRESCENT HALO
+      if (figId < 2.5) {
+        vec2 q = abs(p);
+        float eyeW = prm.x * 0.24;
+        float archR = prm.y * 0.65;
+        float vesica = max(
+          length(vec2(q.x, q.y + eyeW)) - archR,
+          length(vec2(q.x, q.y - eyeW)) - archR
+        );
+        float pupil = length(p - vec2(0.0, 0.02 * sin(prm.w))) - archR * 0.34;
+        float plume = sin(ang * 24.0 + r * 32.0 + prm.w) * 0.5 + 0.5;
+        float dist = min(abs(vesica), abs(pupil));
+        return vec2(vesica < 0.0 ? -dist : dist, plume);
+      }
+
+      // 3: DRAGON & MERMAID OVERLAPPING SCALES
+      if (figId < 3.5) {
+        float scaleFreq = prm.x * 1.45;
+        vec2 uvS = p * scaleFreq;
+        float row = floor(uvS.y);
+        uvS.x += mod(row, 2.0) * 0.5;
+        vec2 cell = fract(uvS) - 0.5;
+        float dScale = length(cell - vec2(0.0, -0.18)) - 0.46;
+        float ridge = sin(length(cell) * 26.0 - timePhase * 2.0) * 0.5 + 0.5;
+        return vec2(dScale, ridge);
+      }
+
+      // 4: SPIRAL GALAXY, NAUTILUS SHELL, YIN-YANG & VORTEX
+      if (figId < 4.5) {
+        float arms = prm.x;
+        float tightness = prm.y * 9.0;
+        float armWidth = prm.z * 0.25;
+        float spiralPhase = ang * arms + log(r + 0.04) * tightness - timePhase * 1.5 + prm.w;
+        float armWave = cos(spiralPhase);
+        float dSpiral = (abs(armWave) - (1.0 - armWidth)) * r * 0.35;
+        float coreGlow = r - 0.08;
+        float d = min(dSpiral, coreGlow);
+        return vec2(d, armWave * 0.5 + 0.5);
+      }
+
+      // 5: HONEYCOMB CELLS, FLOWER OF LIFE, CUBES & CIRCUIT GRID
+      if (figId < 5.5) {
+        float freq = prm.x * 1.6;
+        vec2 s = vec2(1.0, 1.7320508);
+        vec2 a = mod(p * freq, s) - s * 0.5;
+        vec2 b = mod(p * freq - s * 0.5, s) - s * 0.5;
+        vec2 gv = dot(a, a) < dot(b, b) ? a : b;
+        float hexDist = max(abs(gv.x), dot(abs(gv), normalize(vec2(1.0, 1.7320508))));
+        float dHex = hexDist - prm.y * 0.88;
+        float cellTex = sin(hexDist * 30.0 + prm.w) * 0.5 + 0.5;
+        return vec2(dHex, cellTex);
+      }
+
+      // 6: SNOWFLAKE CRYSTAL, STAR POLYHEDRON, CROWN & GEAR
+      if (figId < 6.5) {
+        float points = prm.x;
+        float sharpness = prm.y * 0.22;
+        float branch = prm.z;
+        float sector = 6.2831853 / max(points, 3.0);
+        float aMod = abs(mod(ang + prm.w, sector) - sector * 0.5);
+        vec2 sp = vec2(cos(aMod), sin(aMod)) * r;
+        float starEdge = sp.x + sp.y * (1.2 + sharpness * 4.0) - (0.34 + 0.06 * cos(r * 35.0 * branch));
+        float crystalBranch = abs(sp.y - fract(sp.x * 9.0) * 0.04 * branch) - 0.008;
+        float d = min(starEdge, crystalBranch);
+        float facet = fract(sp.x * 14.0 + sp.y * 14.0);
+        return vec2(d, facet);
+      }
+
+      // 7: WATER RIPPLES, LABYRINTH RINGS, WOOD GRAIN & SOUNDWAVES
+      if (figId < 7.5) {
+        float rings = prm.x * 3.5;
+        float warp = prm.y * 0.14 * sin(ang * 5.0 + prm.w);
+        float wave = sin((r + warp) * rings * 6.2831853 - timePhase * 2.5);
+        float dRing = (abs(wave) - 0.35) * 0.08;
+        return vec2(dRing, wave * 0.5 + 0.5);
+      }
+
+      // 8: DNA DOUBLE HELIX, CELTIC KNOT, FERN FROND & SILK RIBBONS
+      if (figId < 8.5) {
+        float strands = prm.x;
+        float amp = prm.y * 0.26;
+        float freq = prm.z * 14.0;
+        float w1 = sin(p.y * freq + ang * strands + prm.w - timePhase);
+        float w2 = sin(p.x * freq - ang * strands - prm.w + timePhase);
+        float ribbon = min(abs(p.x - amp * w1), abs(p.y - amp * w2)) - 0.025;
+        float silk = sin((p.x + p.y) * 40.0 + w1 * 4.0) * 0.5 + 0.5;
+        return vec2(ribbon, silk);
+      }
+
+      // 9: SUPERNOVA STARBURST, SPIDERWEB, SUN RAYS & DANDELION
+      if (figId < 9.5) {
+        float rays = prm.x;
+        float rayWave = cos(ang * rays + prm.w);
+        float ringWeb = cos(r * 32.0 - abs(rayWave) * 2.2);
+        float dRay = (abs(rayWave) - (0.65 - prm.y * 0.4)) * r * 0.3;
+        float dWeb = min(dRay, (abs(ringWeb) - 0.65) * 0.05);
+        return vec2(dWeb, ringWeb * 0.5 + 0.5);
+      }
+
+      // 10: STAINED GLASS SHARDS, VORONOI CELLS & MOLTEN LAVA CRACKS
+      if (figId < 10.5) {
+        float scale = prm.x * 1.4;
+        vec2 gp = p * scale + vec2(sin(p.y * 4.0 + prm.w), cos(p.x * 4.0)) * 0.25;
+        vec2 ip = floor(gp);
+        vec2 fp = fract(gp);
+        float minD = 1.0;
+        float secondD = 1.0;
+        float cellId = 0.0;
+        for (int y = -1; y <= 1; y++) {
+          for (int x = -1; x <= 1; x++) {
+            vec2 neighbor = vec2(float(x), float(y));
+            vec2 pt = vec2(hash21(ip + neighbor), hash21(ip + neighbor + 17.3));
+            pt = 0.5 + 0.42 * sin(timePhase * 0.6 + 6.2831 * pt + prm.w);
+            float d = length(neighbor + pt - fp);
+            if (d < minD) {
+              secondD = minD;
+              minD = d;
+              cellId = pt.x;
+            } else if (d < secondD) {
+              secondD = d;
+            }
+          }
+        }
+        float edge = (secondD - minD) - 0.08 * prm.z;
+        return vec2(-edge, cellId);
+      }
+
+      // 11: LIQUID MARBLE VEINS, LIGHTNING ARCS, SMOKE & OIL SLICK
+      float turbScale = prm.x * 1.35;
+      vec2 np = p * turbScale;
+      float n1 = vnoise(np + vec2(timePhase * 0.35, prm.w));
+      float n2 = vnoise(np * 2.2 - vec2(n1 * 2.8, timePhase * 0.25));
+      float veinPattern = sin((p.x + p.y) * 9.0 + n2 * 8.5 * prm.y + prm.w);
+      float dMarble = (abs(veinPattern) - 0.22) * 0.06;
+      return vec2(dMarble, n2);
     }
 
-    float sdStar(vec2 p, float r) {
-      float d1 = sdTriangle(p, r * 0.95);
-      float d2 = sdTriangle(vec2(p.x, -p.y), r * 0.95);
-      return min(d1, d2);
+    // =========================================================================
+    // 8 DISTINCT SURFACE TEXTURES & SHADING FINISHES (texStyle 0..7)
+    // =========================================================================
+    vec3 shadeFigureTexture(vec2 p, float figId, float texStyle, vec4 prm, vec3 baseCol, float timePhase, float fi) {
+      vec2 res = evalFigure(p, figId, prm, timePhase);
+      float sdf = res.x;      // < 0 inside figure, > 0 outside figure, ~0 on border
+      float texVal = res.y;   // 0..1 internal texture modulation
+      float borderDist = abs(sdf);
+
+      // Sharp glowing outline present across figures so shapes remain crisp
+      float edgeGlow = 0.0085 / (borderDist + 0.0038);
+      vec3 prism = fastPrismWave(sdf * 3.0 + texVal * 0.65 - u_colorTime * 0.22 + fi * 0.28);
+      vec3 col = mix(baseCol, prism, 0.46);
+
+      // Interior fill mask (1.0 inside figure, 0.0 outside)
+      float inside = 1.0 - smoothstep(-0.015, 0.015, sdf);
+
+      // Style 0: Pure Luminous Neon Outline & Echo Ripples
+      if (texStyle < 0.5) {
+        float echo = abs(fract(sdf * 3.8 - timePhase * 0.5) - 0.5) * 0.14;
+        float rippleGlow = 0.0045 / (echo + 0.004);
+        return col * (edgeGlow + rippleGlow * 0.45);
+      }
+
+      // Style 1: Cathedral Stained Glass Fill (Rich translucent colored panels + dark/gold lead lines)
+      if (texStyle < 1.5) {
+        vec3 glassTint = fastPrismWave(texVal * 1.4 + u_colorTime * 0.15 + fi * 0.35);
+        vec3 glassFill = mix(baseCol, glassTint, 0.65) * (0.38 + 0.35 * texVal) * inside;
+        return glassFill + col * (edgeGlow * 0.85);
+      }
+
+      // Style 2: Liquid Iridescent Plasma Fill
+      if (texStyle < 2.5) {
+        float plasma = sin(p.x * 16.0 + texVal * 6.2831 + u_colorTime) * 0.5 + 0.5;
+        vec3 plasmaCol = fastPrismWave(plasma * 0.8 + texVal * 0.5 - u_colorTime * 0.25);
+        return mix(col, plasmaCol, 0.6) * (inside * (0.42 + 0.32 * plasma) + edgeGlow * 0.75);
+      }
+
+      // Style 3: Crystalline Faceted Gem / Metallic Relief
+      if (texStyle < 3.5) {
+        float facetShine = pow(texVal, 2.2) * 0.85;
+        vec3 spec = mix(col, vec3(0.95, 0.96, 1.0), facetShine * 0.55);
+        return spec * (inside * (0.28 + facetShine * 0.65) + edgeGlow * 0.9);
+      }
+
+      // Style 4: Silk Filigree & Woven Lace Threads
+      if (texStyle < 4.5) {
+        float threads = abs(sin(texVal * 28.0 + (p.x - p.y) * 35.0));
+        float lace = smoothstep(0.65, 0.98, threads);
+        return col * (inside * lace * 0.62 + edgeGlow * 0.82);
+      }
+
+      // Style 5: Marble Veins & Molten Lava Cracks
+      if (texStyle < 5.5) {
+        float veinCore = 0.006 / (abs(texVal - 0.5) + 0.012);
+        vec3 magmaCol = mix(baseCol * 0.45, fastPrismWave(texVal + u_colorTime * 0.18), 0.7);
+        return magmaCol * (inside * 0.35 + veinCore * 0.32) + col * (edgeGlow * 0.75);
+      }
+
+      // Style 6: Holographic Cyber Scan-Lines & Matrix Grid
+      if (texStyle < 6.5) {
+        float scan = step(0.45, fract(p.y * 32.0 - timePhase * 1.5)) * step(0.35, fract(p.x * 32.0));
+        return col * (inside * (0.22 + 0.48 * scan * texVal) + edgeGlow * 0.92);
+      }
+
+      // Style 7: Velvet Aurora Soft Glow
+      float velvet = smoothstep(0.18, -0.14, sdf) * (0.35 + 0.45 * texVal);
+      return col * (velvet + edgeGlow * 0.68);
     }
 
-    // Chebyshev polynomial cos(6a) — avoids expensive atan() + cos()
-    float sdLotus(vec2 p, float r) {
-      float len = length(p) + 0.00001;
-      float c = p.x / len;
-      float c3 = (4.0 * c * c - 3.0) * c;
-      float cos6a = 2.0 * c3 * c3 - 1.0;
-      return len - (r + 0.038 * cos6a);
-    }
-
-    float evalShape(vec2 p, float r, float id) {
-      if (id < 0.5) return sdCircle(p, r);
-      if (id < 1.5) return sdHexagon(p, r * 0.88);
-      if (id < 2.5) return sdDiamond(p, r * 0.92);
-      if (id < 3.5) return sdTriangle(p, r * 0.95);
-      if (id < 4.5) return sdStar(p, r * 0.95);
-      return sdLotus(p, r * 0.9);
-    }
-
-    // Fast algebraic glow falloff (replaces expensive pow(x, 1.2))
-    vec3 renderShapeGlow(vec2 p, float shapeId, vec3 col, float timePhase) {
-      float d = abs(sin(evalShape(p, 0.16, shapeId) * 14.0 - timePhase)) * 0.07142857;
-      float g = 0.0075 / (d + 0.0012);
-      return col * (g * inversesqrt(inversesqrt(g + 0.0001)));
-    }
-
-    vec3 styleTexture(vec4 texel, vec3 col) {
-      vec3 tinted = mix(texel.rgb, texel.rgb * col * 1.9, 0.45);
-      return tinted * texel.a * 0.42;
+    vec3 stylePhotoTexture(vec4 texel, vec3 baseCol, float phase) {
+      vec3 prism = fastPrismWave(phase + texel.r * 0.75 - u_colorTime * 0.2);
+      vec3 tint = mix(baseCol, prism, 0.45);
+      vec3 balancedTex = texel.rgb * (0.45 + tint * 1.15);
+      return balancedTex * texel.a * 0.78;
     }
 
     void main() {
       vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
-      uv += vec2(sin(u_time * 0.22), cos(u_time * 0.17)) * 0.05;
 
-      float radius = length(uv);
-      float angle = atan(uv.y, uv.x);
+      // 3D Torus Loop Curvature steered by Mouse, Finger Drag, or Mobile Gyroscope
+      float preDist = length(uv - u_steer * 0.45);
+      float bendFactor = 1.0 / (preDist + 0.45);
+      vec2 pUV = uv - u_steer * (0.38 * bendFactor);
 
-      float slice = 6.2831853 / u_segments;
+      float radius = length(pUV);
+      float rawAngle = atan(pUV.y, pUV.x);
+
+      // Tunnel swirl & forward zoom
+      float angle = rawAngle + u_roll + u_twist / (radius + 0.36);
+      float safeRad = radius + 0.12;
+      float hyperZ = 0.62 / safeRad + radius * 0.72 - u_travel;
+
+      // Kaleidoscopic N-fold mirror reflection
+      float slice = 6.2831853 / max(u_segments, 1.0);
       angle = abs(mod(angle, slice) - slice * 0.5);
 
-      float depth = 0.55 / (radius + 0.1) - u_time * u_speed;
-
+      // Clean tile coordinates so figures (flowers, butterflies, galaxies, scales) appear whole & crisp!
       vec2 p = vec2(
-        abs(fract(depth) - 0.5) * 2.0 - 0.5,
-        abs(fract(angle / slice) - 0.5) * 2.0 - 0.5
+        abs(fract(hyperZ) - 0.5) * 2.0 - 0.5,
+        (angle / slice) * 2.0 - 0.5
       );
 
       vec3 finalColor = vec3(0.0);
-      float timePhase = u_time * 1.1;
-      float baseColorPhase = depth * 0.12 + u_time * 0.05;
-      vec2 texDrift = vec2(0.0, u_time * 0.05);
+      float timePhase = u_travel * 0.45;
+      float depthHueOffset = fract(hyperZ * 0.16);
+      vec2 texDrift = vec2(u_travel * 0.09, u_roll * 0.12);
 
-      for (int i = 0; i < 4; i++) {
-        if (i == 0) p = u_rot0 * p;
-        else if (i == 1) p = u_rot1 * p;
-        else if (i == 2) p = u_rot2 * p;
-        else p = u_rot3 * p;
-
-        p = abs(fract(p * 1.35) - 0.5) - 0.25;
-
+      // 3 Counter-Rotating Octaves (Guaranteed 60-120 FPS)
+      for (int i = 0; i < 3; i++) {
+        vec3 octBaseCol;
+        float octWeight;
         float fi = float(i);
-        vec3 col = getSlowColor(baseColorPhase + fi * 0.22);
-        vec2 texUV = p * 2.1 + 0.5 + texDrift + vec2(fi * 0.17, 0.0);
 
-        if (u_weight0 > 0.002) {
+        if (i == 0) {
+          p = u_rot0 * p;
+          octBaseCol = u_col0;
+          octWeight = 1.0;
+        } else if (i == 1) {
+          p = u_rot1 * p;
+          octBaseCol = u_col1;
+          octWeight = 0.68;
+        } else {
+          p = u_rot2 * p;
+          octBaseCol = u_col2;
+          octWeight = 0.46;
+        }
+
+        // Gentle kaleidoscopic mirror fold (preserves full figure silhouettes while adding depth)
+        if (i > 0) {
+          float r2 = clamp(dot(p, p), 0.42, 1.38);
+          vec2 folded = abs(p) / r2 - vec2(0.52, 0.46);
+          folded = abs(fract(folded * 1.12) - 0.5) - 0.25;
+          p = mix(p, folded, u_foldMix);
+        }
+
+        float iridPhase = dot(p, p) * 1.6 + depthHueOffset + fi * 0.25;
+        vec3 depthRainbow = fastPrismWave(depthHueOffset + u_colorTime * 0.18 + fi * 0.22);
+        vec3 col = mix(octBaseCol, depthRainbow, 0.42);
+        vec2 texUV = p * 1.85 + 0.5 + texDrift + vec2(fi * 0.19, -fi * 0.13);
+
+        if (u_weight0 > 0.005) {
           vec3 layer0 = (u_type0 == 0)
-            ? renderShapeGlow(p, u_shape0, col, timePhase)
-            : styleTexture(texture2D(u_tex0, texUV), col);
-          finalColor += layer0 * u_weight0;
+            ? shadeFigureTexture(p, u_fig0, u_texStyle0, u_param0, col, timePhase, fi)
+            : stylePhotoTexture(texture2D(u_tex0, texUV), col, iridPhase);
+          finalColor += layer0 * (u_weight0 * octWeight);
         }
 
-        if (u_weight1 > 0.002) {
+        if (u_weight1 > 0.005) {
           vec3 layer1 = (u_type1 == 0)
-            ? renderShapeGlow(p, u_shape1, col, timePhase)
-            : styleTexture(texture2D(u_tex1, texUV), col);
-          finalColor += layer1 * u_weight1;
-        }
-
-        if (u_weight2 > 0.002) {
-          vec3 layer2 = (u_type2 == 0)
-            ? renderShapeGlow(p, u_shape2, col, timePhase)
-            : styleTexture(texture2D(u_tex2, texUV), col);
-          finalColor += layer2 * u_weight2;
+            ? shadeFigureTexture(p, u_fig1, u_texStyle1, u_param1, col, timePhase, fi)
+            : stylePhotoTexture(texture2D(u_tex1, texUV), col, iridPhase);
+          finalColor += layer1 * (u_weight1 * octWeight);
         }
       }
 
-      finalColor = finalColor / (1.0 + finalColor * 0.18);
+      // Subtle sacred portal at the vanishing point
+      float coreMask = smoothstep(0.0, 0.28, radius);
+      vec3 centerPortal = (u_coreCol * 0.65 + vec3(0.14, 0.12, 0.2)) * (1.0 - coreMask);
+      finalColor = finalColor * coreMask + centerPortal;
 
-      float tunnelCenter = smoothstep(0.0, 0.32, radius);
-      vec3 horizonGlow = getSlowColor(u_time * 0.05 + 0.5) * (1.0 - tunnelCenter) * 0.65;
-      finalColor = finalColor * tunnelCenter + horizonGlow;
+      // Balanced tone mapping curve with user Brightness Level control
+      finalColor *= u_brightness;
+      vec3 toned = finalColor / (1.0 + finalColor * 0.46);
 
-      gl_FragColor = vec4(finalColor, 1.0);
+      gl_FragColor = vec4(clamp(toned, 0.0, 1.0), 1.0);
     }
   </script>
 
   <script>
+    const ITEMS_100 = [{"name": "Lotus Flower (Neon)", "cat": "Botanical & Flowers", "fig": 0, "tex": 0, "p": [6.0, 0.42, 0.25, 1.0]}, {"name": "Rose Blossom (Silk)", "cat": "Botanical & Flowers", "fig": 0, "tex": 4, "p": [5.0, 0.5, 0.35, 1.8]}, {"name": "Sunflower Crown (Gold)", "cat": "Botanical & Flowers", "fig": 0, "tex": 1, "p": [16.0, 0.32, 0.45, 0.5]}, {"name": "Cherry Blossom (Glass)", "cat": "Botanical & Flowers", "fig": 0, "tex": 1, "p": [5.0, 0.48, 0.2, 2.2]}, {"name": "Chrysanthemum (Filigree)", "cat": "Botanical & Flowers", "fig": 0, "tex": 4, "p": [24.0, 0.28, 0.38, 1.2]}, {"name": "Dahlia Spiral (Plasma)", "cat": "Botanical & Flowers", "fig": 0, "tex": 2, "p": [12.0, 0.44, 0.3, 3.0]}, {"name": "Hibiscus Petals (Velvet)", "cat": "Botanical & Flowers", "fig": 0, "tex": 7, "p": [5.0, 0.55, 0.18, 0.8]}, {"name": "Water Lily (Ripples)", "cat": "Botanical & Flowers", "fig": 0, "tex": 5, "p": [8.0, 0.4, 0.32, 1.5]}, {"name": "Orchid Symmetry (Crystal)", "cat": "Botanical & Flowers", "fig": 0, "tex": 3, "p": [3.0, 0.58, 0.22, 2.5]}, {"name": "Peony Layers (Aurora)", "cat": "Botanical & Flowers", "fig": 0, "tex": 7, "p": [10.0, 0.46, 0.4, 0.4]}, {"name": "Fern Frond Leaf", "cat": "Botanical & Flowers", "fig": 8, "tex": 4, "p": [7.0, 0.45, 0.6, 1.1]}, {"name": "Vine Tendrils", "cat": "Botanical & Flowers", "fig": 8, "tex": 0, "p": [4.0, 0.65, 0.35, 2.0]}, {"name": "Four-Leaf Clover", "cat": "Botanical & Flowers", "fig": 0, "tex": 1, "p": [4.0, 0.56, 0.15, 0.78]}, {"name": "Dandelion Puff", "cat": "Botanical & Flowers", "fig": 9, "tex": 4, "p": [18.0, 0.3, 0.7, 0.3]}, {"name": "Tropical Monstera", "cat": "Botanical & Flowers", "fig": 8, "tex": 1, "p": [6.0, 0.52, 0.5, 1.7]}, {"name": "Butterfly Wings (Glass)", "cat": "Creatures & Wings", "fig": 1, "tex": 1, "p": [2.0, 0.55, 0.35, 1.0]}, {"name": "Monarch Butterfly (Neon)", "cat": "Creatures & Wings", "fig": 1, "tex": 0, "p": [3.0, 0.62, 0.28, 1.6]}, {"name": "Peacock Feather Eye", "cat": "Creatures & Wings", "fig": 2, "tex": 1, "p": [1.0, 0.48, 0.65, 0.9]}, {"name": "Peacock Plume (Silk)", "cat": "Creatures & Wings", "fig": 2, "tex": 4, "p": [2.0, 0.56, 0.5, 1.4]}, {"name": "Dragon Scales (Metallic)", "cat": "Creatures & Wings", "fig": 3, "tex": 3, "p": [5.5, 0.5, 0.4, 0.6]}, {"name": "Mermaid Scales (Iridescent)", "cat": "Creatures & Wings", "fig": 3, "tex": 1, "p": [7.0, 0.45, 0.55, 1.3]}, {"name": "Spiderweb Dewdrops", "cat": "Creatures & Wings", "fig": 9, "tex": 0, "p": [10.0, 0.25, 0.85, 0.5]}, {"name": "Nautilus Shell Spiral", "cat": "Creatures & Wings", "fig": 4, "tex": 1, "p": [3.0, 0.42, 0.6, 1.0]}, {"name": "Coral Reef Branch", "cat": "Creatures & Wings", "fig": 8, "tex": 2, "p": [9.0, 0.38, 0.75, 2.1]}, {"name": "Jellyfish Bells", "cat": "Creatures & Wings", "fig": 1, "tex": 7, "p": [4.0, 0.48, 0.52, 2.4]}, {"name": "Phoenix Feathers", "cat": "Creatures & Wings", "fig": 2, "tex": 2, "p": [3.0, 0.64, 0.42, 1.9]}, {"name": "Serpent Skin (Marble)", "cat": "Creatures & Wings", "fig": 3, "tex": 5, "p": [8.5, 0.4, 0.65, 2.8]}, {"name": "Angel Wing Plumes", "cat": "Creatures & Wings", "fig": 1, "tex": 4, "p": [5.0, 0.58, 0.45, 0.4]}, {"name": "Beehive Honeycomb", "cat": "Creatures & Wings", "fig": 5, "tex": 1, "p": [4.5, 0.46, 0.3, 0.0]}, {"name": "Starfish Arms", "cat": "Creatures & Wings", "fig": 6, "tex": 3, "p": [5.0, 0.54, 0.38, 0.3]}, {"name": "Spiral Galaxy Arms", "cat": "Cosmic & Spirals", "fig": 4, "tex": 7, "p": [2.0, 0.55, 0.75, 1.2]}, {"name": "Pinwheel Nebula", "cat": "Cosmic & Spirals", "fig": 4, "tex": 2, "p": [4.0, 0.48, 0.65, 1.8]}, {"name": "DNA Double Helix", "cat": "Cosmic & Spirals", "fig": 8, "tex": 0, "p": [2.0, 0.7, 0.8, 0.9]}, {"name": "Black Hole Accretion", "cat": "Cosmic & Spirals", "fig": 4, "tex": 5, "p": [1.0, 0.65, 0.9, 2.5]}, {"name": "Supernova Starburst", "cat": "Cosmic & Spirals", "fig": 9, "tex": 7, "p": [14.0, 0.4, 0.95, 1.4]}, {"name": "Vortex Whirlpool", "cat": "Cosmic & Spirals", "fig": 4, "tex": 0, "p": [3.0, 0.6, 0.85, 2.0]}, {"name": "Cosmic Web Filaments", "cat": "Cosmic & Spirals", "fig": 10, "tex": 0, "p": [4.0, 0.55, 0.7, 0.8]}, {"name": "Solar Flare Corona", "cat": "Cosmic & Spirals", "fig": 9, "tex": 2, "p": [12.0, 0.48, 0.8, 2.2]}, {"name": "Pulsar Wave Rings", "cat": "Cosmic & Spirals", "fig": 7, "tex": 6, "p": [6.0, 0.5, 0.6, 1.5]}, {"name": "Milky Way Dust", "cat": "Cosmic & Spirals", "fig": 11, "tex": 7, "p": [3.5, 0.62, 0.5, 1.1]}, {"name": "Crescent Moon Halo", "cat": "Cosmic & Spirals", "fig": 2, "tex": 7, "p": [1.5, 0.52, 0.72, 2.7]}, {"name": "Comet Tail Trails", "cat": "Cosmic & Spirals", "fig": 4, "tex": 4, "p": [5.0, 0.5, 0.55, 0.6]}, {"name": "Quantum String Loops", "cat": "Cosmic & Spirals", "fig": 8, "tex": 6, "p": [5.0, 0.6, 0.45, 3.1]}, {"name": "Astral Wormhole", "cat": "Cosmic & Spirals", "fig": 7, "tex": 2, "p": [8.0, 0.44, 0.85, 1.9]}, {"name": "Starlight Constellation", "cat": "Cosmic & Spirals", "fig": 10, "tex": 3, "p": [5.0, 0.42, 0.65, 2.3]}, {"name": "Sacred Heart (Glass)", "cat": "Sacred & Symbolic", "fig": 1, "tex": 1, "p": [1.0, 0.52, 0.45, 0.0]}, {"name": "Mystic Third Eye", "cat": "Sacred & Symbolic", "fig": 2, "tex": 0, "p": [1.0, 0.44, 0.78, 0.0]}, {"name": "Yin-Yang Swirl", "cat": "Sacred & Symbolic", "fig": 4, "tex": 1, "p": [2.0, 0.6, 0.4, 3.14]}, {"name": "Celtic Endless Knot", "cat": "Sacred & Symbolic", "fig": 8, "tex": 4, "p": [3.0, 0.5, 0.7, 0.5]}, {"name": "Merkaba Star Tetrahedron", "cat": "Sacred & Symbolic", "fig": 6, "tex": 0, "p": [6.0, 0.48, 0.55, 0.52]}, {"name": "Flower of Life Rings", "cat": "Sacred & Symbolic", "fig": 5, "tex": 0, "p": [3.5, 0.5, 0.65, 0.52]}, {"name": "Royal Crown Jewels", "cat": "Sacred & Symbolic", "fig": 6, "tex": 1, "p": [7.0, 0.52, 0.42, 0.2]}, {"name": "Infinity Ribbon", "cat": "Sacred & Symbolic", "fig": 8, "tex": 7, "p": [2.0, 0.58, 0.55, 1.57]}, {"name": "Mandala Wheel of Dharma", "cat": "Sacred & Symbolic", "fig": 9, "tex": 1, "p": [8.0, 0.36, 0.75, 0.4]}, {"name": "Alchemical Sun & Moon", "cat": "Sacred & Symbolic", "fig": 2, "tex": 3, "p": [2.0, 0.5, 0.6, 1.57]}, {"name": "Gothic Rose Window", "cat": "Sacred & Symbolic", "fig": 0, "tex": 1, "p": [12.0, 0.38, 0.55, 0.26]}, {"name": "Triquetra Trinity", "cat": "Sacred & Symbolic", "fig": 6, "tex": 4, "p": [3.0, 0.55, 0.48, 1.04]}, {"name": "Labyrinth Maze", "cat": "Sacred & Symbolic", "fig": 7, "tex": 6, "p": [9.0, 0.42, 0.75, 0.3]}, {"name": "Angel Halo & Cross", "cat": "Sacred & Symbolic", "fig": 9, "tex": 7, "p": [4.0, 0.32, 0.88, 0.0]}, {"name": "Lotus Throne", "cat": "Sacred & Symbolic", "fig": 0, "tex": 3, "p": [8.0, 0.46, 0.36, 0.39]}, {"name": "Ice Snowflake (6-Point)", "cat": "Crystal & Geo", "fig": 6, "tex": 3, "p": [6.0, 0.45, 0.72, 0.0]}, {"name": "Frost Fern Crystal", "cat": "Crystal & Geo", "fig": 6, "tex": 4, "p": [12.0, 0.38, 0.8, 0.26]}, {"name": "Diamond Prism Facets", "cat": "Crystal & Geo", "fig": 10, "tex": 3, "p": [6.0, 0.5, 0.6, 0.4]}, {"name": "Cathedral Stained Glass", "cat": "Crystal & Geo", "fig": 10, "tex": 1, "p": [5.0, 0.55, 0.75, 1.2]}, {"name": "Origami Pinwheel", "cat": "Crystal & Geo", "fig": 6, "tex": 1, "p": [4.0, 0.56, 0.5, 0.78]}, {"name": "Op-Art Checkerboard", "cat": "Crystal & Geo", "fig": 5, "tex": 6, "p": [6.0, 0.5, 0.8, 0.78]}, {"name": "Isometric 3D Cubes", "cat": "Crystal & Geo", "fig": 5, "tex": 3, "p": [4.0, 0.52, 0.7, 0.52]}, {"name": "Hexagonal Quartz", "cat": "Crystal & Geo", "fig": 5, "tex": 0, "p": [5.0, 0.48, 0.6, 0.0]}, {"name": "Amethyst Geode", "cat": "Crystal & Geo", "fig": 10, "tex": 2, "p": [7.0, 0.58, 0.82, 2.0]}, {"name": "Octagonal Star Tile", "cat": "Crystal & Geo", "fig": 6, "tex": 1, "p": [8.0, 0.44, 0.62, 0.39]}, {"name": "Kite & Dart Penrose", "cat": "Crystal & Geo", "fig": 10, "tex": 4, "p": [5.0, 0.46, 0.68, 1.8]}, {"name": "Ruby Chandelier", "cat": "Crystal & Geo", "fig": 9, "tex": 3, "p": [10.0, 0.35, 0.78, 0.31]}, {"name": "Shattered Mirror Shards", "cat": "Crystal & Geo", "fig": 10, "tex": 5, "p": [8.0, 0.62, 0.85, 2.6]}, {"name": "Tesseract Hypercube", "cat": "Crystal & Geo", "fig": 5, "tex": 0, "p": [3.0, 0.55, 0.85, 0.78]}, {"name": "Moroccan Zellige Tile", "cat": "Crystal & Geo", "fig": 6, "tex": 1, "p": [12.0, 0.4, 0.66, 0.13]}, {"name": "Liquid Marble Veins", "cat": "Organic Textures", "fig": 11, "tex": 5, "p": [4.0, 0.65, 0.75, 0.5]}, {"name": "Molten Lava Cracks", "cat": "Organic Textures", "fig": 10, "tex": 5, "p": [5.5, 0.6, 0.9, 1.4]}, {"name": "Ocean Water Ripples", "cat": "Organic Textures", "fig": 7, "tex": 2, "p": [7.0, 0.48, 0.65, 0.8]}, {"name": "Silk Ribbon Waves", "cat": "Organic Textures", "fig": 8, "tex": 4, "p": [4.0, 0.54, 0.6, 1.3]}, {"name": "Woven Basket Lattice", "cat": "Organic Textures", "fig": 5, "tex": 4, "p": [8.0, 0.45, 0.75, 0.78]}, {"name": "Wood Grain Rings", "cat": "Organic Textures", "fig": 7, "tex": 5, "p": [5.0, 0.55, 0.5, 2.1]}, {"name": "Incense Smoke Wisps", "cat": "Organic Textures", "fig": 11, "tex": 7, "p": [2.8, 0.7, 0.65, 1.7]}, {"name": "Tie-Dye Psychedelic Swirl", "cat": "Organic Textures", "fig": 4, "tex": 2, "p": [6.0, 0.62, 0.7, 2.4]}, {"name": "Oil Slick Iridescence", "cat": "Organic Textures", "fig": 11, "tex": 1, "p": [5.0, 0.58, 0.8, 0.9]}, {"name": "Sand Dunes Wind", "cat": "Organic Textures", "fig": 7, "tex": 4, "p": [4.0, 0.5, 0.55, 1.1]}, {"name": "Lightning Plasma Arcs", "cat": "Organic Textures", "fig": 11, "tex": 0, "p": [6.5, 0.68, 0.92, 2.9]}, {"name": "Aurora Borealis Curtains", "cat": "Organic Textures", "fig": 8, "tex": 7, "p": [3.0, 0.64, 0.78, 0.4]}, {"name": "Velvet Paisley Drops", "cat": "Organic Textures", "fig": 1, "tex": 7, "p": [3.0, 0.52, 0.62, 2.1]}, {"name": "Brushed Gold Foil", "cat": "Organic Textures", "fig": 11, "tex": 3, "p": [7.5, 0.46, 0.7, 1.6]}, {"name": "Bubbling Foam Cells", "cat": "Organic Textures", "fig": 10, "tex": 7, "p": [6.0, 0.5, 0.6, 0.7]}, {"name": "Cyber Circuit Traces", "cat": "Tech & Abstract", "fig": 5, "tex": 6, "p": [7.0, 0.44, 0.88, 0.0]}, {"name": "Synthwave Laser Grid", "cat": "Tech & Abstract", "fig": 9, "tex": 6, "p": [8.0, 0.34, 0.9, 0.39]}, {"name": "Cymatic Soundwave", "cat": "Tech & Abstract", "fig": 7, "tex": 0, "p": [10.0, 0.46, 0.82, 1.2]}, {"name": "Clockwork Gear Wheels", "cat": "Tech & Abstract", "fig": 6, "tex": 3, "p": [16.0, 0.36, 0.7, 0.2]}, {"name": "Hologram Matrix", "cat": "Tech & Abstract", "fig": 5, "tex": 6, "p": [9.0, 0.5, 0.76, 0.78]}, {"name": "Neon Tunnel Rings", "cat": "Tech & Abstract", "fig": 7, "tex": 0, "p": [5.0, 0.4, 0.85, 0.0]}, {"name": "Fractal Fern Lace", "cat": "Tech & Abstract", "fig": 8, "tex": 4, "p": [8.0, 0.48, 0.72, 2.5]}, {"name": "Chromatic Dispersion", "cat": "Tech & Abstract", "fig": 11, "tex": 2, "p": [4.5, 0.6, 0.85, 3.2]}, {"name": "Digital Pixel Mosaic", "cat": "Tech & Abstract", "fig": 5, "tex": 1, "p": [10.0, 0.48, 0.8, 0.0]}, {"name": "Hyperspace Star Gate", "cat": "Tech & Abstract", "fig": 9, "tex": 1, "p": [12.0, 0.38, 0.92, 0.26]}];
+    const REALMS_20 = [{"name": "Balanced Neon Rainbow", "rgb": [0.0, 0.33, 0.67], "twist": 0.22, "fold": 0.25}, {"name": "Cyberpunk Magenta & Cyan", "rgb": [0.84, 0.14, 0.48], "twist": 0.28, "fold": 0.35}, {"name": "Golden Solar Lotus", "rgb": [0.06, 0.2, 0.58], "twist": 0.18, "fold": 0.2}, {"name": "Emerald Jade Temple", "rgb": [0.42, 0.12, 0.34], "twist": 0.2, "fold": 0.24}, {"name": "Ultraviolet Dream", "rgb": [0.74, 0.88, 0.12], "twist": 0.34, "fold": 0.4}, {"name": "Crimson Phoenix Fire", "rgb": [0.02, 0.42, 0.56], "twist": 0.3, "fold": 0.36}, {"name": "Arctic Ice Crystal", "rgb": [0.54, 0.18, 0.28], "twist": 0.14, "fold": 0.18}, {"name": "Vaporwave Sunset", "rgb": [0.88, 0.38, 0.14], "twist": 0.26, "fold": 0.32}, {"name": "Bioluminescent Ocean", "rgb": [0.48, 0.1, 0.24], "twist": 0.24, "fold": 0.28}, {"name": "Amethyst Geode", "rgb": [0.72, 0.92, 0.18], "twist": 0.16, "fold": 0.22}, {"name": "Vortex Spiral Tunnel", "rgb": [0.6, 0.25, 0.05], "twist": 0.58, "fold": 0.48}, {"name": "Stained Glass Cathedral", "rgb": [0.12, 0.44, 0.78], "twist": 0.12, "fold": 0.15}, {"name": "Plasma Supernova", "rgb": [0.68, 0.05, 0.42], "twist": 0.36, "fold": 0.42}, {"name": "Peacock Iridescence", "rgb": [0.36, 0.16, 0.62], "twist": 0.25, "fold": 0.3}, {"name": "Rose Quartz Silk", "rgb": [0.92, 0.24, 0.44], "twist": 0.18, "fold": 0.22}, {"name": "Electric Matrix", "rgb": [0.38, 0.08, 0.46], "twist": 0.32, "fold": 0.38}, {"name": "Obsidian & Gold", "rgb": [0.08, 0.24, 0.64], "twist": 0.15, "fold": 0.2}, {"name": "Coral Reef Lagoon", "rgb": [0.04, 0.28, 0.52], "twist": 0.22, "fold": 0.26}, {"name": "Cosmic Nebula", "rgb": [0.78, 0.22, 0.46], "twist": 0.42, "fold": 0.45}, {"name": "Prismatic Aurora", "rgb": [0.16, 0.5, 0.84], "twist": 0.28, "fold": 0.34}];
+
+    const TEX_STYLE_NAMES = [
+      "Neon Outline",
+      "Stained Glass",
+      "Liquid Plasma",
+      "Crystal Facets",
+      "Silk Filigree",
+      "Marble Veins",
+      "Hologram Grid",
+      "Velvet Aurora"
+    ];
+
     const canvas = document.getElementById('glcanvas');
-    // High-performance WebGL context with alpha/depth/stencil disabled
     const gl = canvas.getContext('webgl', {
       alpha: false,
       antialias: false,
       depth: false,
       stencil: false,
+      preserveDrawingBuffer: false,
       powerPreference: 'high-performance'
     });
 
-    let renderScale = 0.8;
+    let renderScale = 0.65;
+    let dynamicScale = 0.65;
+    let autoFpsBoost = true;
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const effectiveScale = dpr * renderScale;
-      canvas.width = Math.max(320, Math.floor(window.innerWidth * effectiveScale));
-      canvas.height = Math.max(240, Math.floor(window.innerHeight * effectiveScale));
-      gl.viewport(0, 0, canvas.width, canvas.height);
+      const effectiveScale = Math.max(0.42, Math.min(1.0, dynamicScale));
+      const targetW = Math.max(280, Math.floor(window.innerWidth * effectiveScale));
+      const targetH = Math.max(200, Math.floor(window.innerHeight * effectiveScale));
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+        if (gl) {
+          gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+      }
     }
     window.addEventListener('resize', resize);
     resize();
 
-    function createShader(gl, type, source) {
-      const shader = gl.createShader(type);
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
+    function createShader(glCtx, type, source) {
+      const shader = glCtx.createShader(type);
+      glCtx.shaderSource(shader, source);
+      glCtx.compileShader(shader);
+      if (!glCtx.getShaderParameter(shader, glCtx.COMPILE_STATUS)) {
+        console.error('WebGL Shader Compile Error:', glCtx.getShaderInfoLog(shader));
+      }
       return shader;
     }
 
     const program = gl.createProgram();
-    gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vertex-shader').text));
-    gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fragment-shader').text));
+    const vsSource = document.getElementById('vertex-shader').textContent;
+    const fsSource = document.getElementById('fragment-shader').textContent;
+    gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fsSource));
     gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('WebGL Program Link Error:', gl.getProgramInfoLog(program));
+    }
     gl.useProgram(program);
 
     const buffer = gl.createBuffer();
@@ -587,29 +1116,35 @@
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-    // Cache all uniform locations once
     const uLoc = {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
-      time: gl.getUniformLocation(program, 'u_time'),
-      speed: gl.getUniformLocation(program, 'u_speed'),
+      travel: gl.getUniformLocation(program, 'u_travel'),
+      roll: gl.getUniformLocation(program, 'u_roll'),
+      steer: gl.getUniformLocation(program, 'u_steer'),
+      colorTime: gl.getUniformLocation(program, 'u_colorTime'),
       segments: gl.getUniformLocation(program, 'u_segments'),
-      palBlend: gl.getUniformLocation(program, 'u_palBlend'),
+      brightness: gl.getUniformLocation(program, 'u_brightness'),
+      twist: gl.getUniformLocation(program, 'u_twist'),
+      foldMix: gl.getUniformLocation(program, 'u_foldMix'),
       rot0: gl.getUniformLocation(program, 'u_rot0'),
       rot1: gl.getUniformLocation(program, 'u_rot1'),
       rot2: gl.getUniformLocation(program, 'u_rot2'),
-      rot3: gl.getUniformLocation(program, 'u_rot3'),
+      col0: gl.getUniformLocation(program, 'u_col0'),
+      col1: gl.getUniformLocation(program, 'u_col1'),
+      col2: gl.getUniformLocation(program, 'u_col2'),
+      coreCol: gl.getUniformLocation(program, 'u_coreCol'),
       type0: gl.getUniformLocation(program, 'u_type0'),
-      shape0: gl.getUniformLocation(program, 'u_shape0'),
+      fig0: gl.getUniformLocation(program, 'u_fig0'),
+      texStyle0: gl.getUniformLocation(program, 'u_texStyle0'),
+      param0: gl.getUniformLocation(program, 'u_param0'),
       weight0: gl.getUniformLocation(program, 'u_weight0'),
       tex0: gl.getUniformLocation(program, 'u_tex0'),
       type1: gl.getUniformLocation(program, 'u_type1'),
-      shape1: gl.getUniformLocation(program, 'u_shape1'),
+      fig1: gl.getUniformLocation(program, 'u_fig1'),
+      texStyle1: gl.getUniformLocation(program, 'u_texStyle1'),
+      param1: gl.getUniformLocation(program, 'u_param1'),
       weight1: gl.getUniformLocation(program, 'u_weight1'),
-      tex1: gl.getUniformLocation(program, 'u_tex1'),
-      type2: gl.getUniformLocation(program, 'u_type2'),
-      shape2: gl.getUniformLocation(program, 'u_shape2'),
-      weight2: gl.getUniformLocation(program, 'u_weight2'),
-      tex2: gl.getUniformLocation(program, 'u_tex2')
+      tex1: gl.getUniformLocation(program, 'u_tex1')
     };
 
     function createFallbackTexture() {
@@ -620,7 +1155,6 @@
     }
     const fallbackTex = createFallbackTexture();
 
-    // Scale uploaded images to 512x512 POT with hardware MIRRORED_REPEAT + mipmaps
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = 512;
     offscreenCanvas.height = 512;
@@ -642,55 +1176,332 @@
       return tex;
     }
 
-    const shapeSVGs = [
-      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
-      '<svg viewBox="0 0 24 24"><polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5"/></svg>',
-      '<svg viewBox="0 0 24 24"><polygon points="12,3 21,12 12,21 3,12"/></svg>',
-      '<svg viewBox="0 0 24 24"><polygon points="12,4 21,19 3,19"/></svg>',
-      '<svg viewBox="0 0 24 24"><polygon points="12,3 19,17 5,17"/><polygon points="12,21 19,7 5,7"/></svg>',
-      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="6" r="3"/><circle cx="17" cy="9" r="3"/><circle cx="17" cy="15" r="3"/><circle cx="12" cy="18" r="3"/><circle cx="7" cy="15" r="3"/><circle cx="7" cy="9" r="3"/></svg>'
+    // 12 Distinct SVG Thumbnails matching the 12 Figure Engines
+    const figureSVGs = [
+      // 0: Flower
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 2 C15 7 15 7 12 12 C9 7 9 7 12 2 Z"/><path d="M12 22 C15 17 15 17 12 12 C9 17 9 17 12 22 Z"/><path d="M2 12 C7 15 7 15 12 12 C7 9 7 9 2 12 Z"/><path d="M22 12 C17 15 17 15 12 12 C17 9 17 9 22 12 Z"/></svg>',
+      // 1: Butterfly / Heart
+      '<svg viewBox="0 0 24 24"><path d="M12 6 C8 2 2 4 3 10 C4 14 9 14 12 12 C15 14 20 14 21 10 C22 4 16 2 12 6 Z"/><path d="M12 12 C9 14 5 18 7 21 C9 22 11 19 12 16 C13 19 15 22 17 21 C19 18 15 14 12 12 Z"/></svg>',
+      // 2: Peacock Feather / Eye
+      '<svg viewBox="0 0 24 24"><path d="M3 12 C7 5 17 5 21 12 C17 19 7 19 3 12 Z"/><circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="1.3"/></svg>',
+      // 3: Dragon Scales
+      '<svg viewBox="0 0 24 24"><path d="M4 8 A4 4 0 0 0 12 8 A4 4 0 0 0 20 8"/><path d="M2 14 A4 4 0 0 0 10 14 A4 4 0 0 0 18 14"/><path d="M6 20 A4 4 0 0 0 14 20"/></svg>',
+      // 4: Spiral Galaxy
+      '<svg viewBox="0 0 24 24"><path d="M12 12 C12 10 14 10 14 12 C14 15 10 15 10 12 C10 7 17 7 17 12 C17 18 7 18 7 12 C7 4 20 4 20 12"/></svg>',
+      // 5: Honeycomb
+      '<svg viewBox="0 0 24 24"><polygon points="12,3 17,6 17,12 12,15 7,12 7,6"/><polygon points="7,12 12,15 12,21 7,24 2,21 2,15"/><polygon points="17,12 22,15 22,21 17,24 12,21 12,15"/></svg>',
+      // 6: Snowflake / Star
+      '<svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><line x1="3.3" y1="7" x2="20.7" y2="17"/><line x1="20.7" y1="7" x2="3.3" y2="17"/><polygon points="12,6 17,12 12,18 7,12"/></svg>',
+      // 7: Ripples
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="9.5"/></svg>',
+      // 8: DNA / Ribbon
+      '<svg viewBox="0 0 24 24"><path d="M6 3 C18 7 6 17 18 21"/><path d="M18 3 C6 7 18 17 6 21"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="17" x2="16" y2="17"/></svg>',
+      // 9: Starburst
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="1" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="23" y2="12"/><line x1="4" y1="4" x2="8" y2="8"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="20" y1="4" x2="16" y2="8"/><line x1="8" y1="16" x2="4" y2="20"/></svg>',
+      // 10: Stained Glass / Voronoi
+      '<svg viewBox="0 0 24 24"><polygon points="3,3 13,4 9,12 3,11"/><polygon points="13,4 21,3 21,13 9,12"/><polygon points="3,11 9,12 11,21 3,21"/><polygon points="9,12 21,13 21,21 11,21"/></svg>',
+      // 11: Liquid Marble Waves
+      '<svg viewBox="0 0 24 24"><path d="M2 7 Q 8 2, 12 7 T 22 7"/><path d="M2 12 Q 8 7, 12 12 T 22 12"/><path d="M2 17 Q 8 12, 12 17 T 22 17"/></svg>'
     ];
 
-    const deck = [
-      { id: 's0', name: 'Circle', type: 'shape', shapeId: 0, key: 'Q', enabled: true, weight: 1.0, targetWeight: 1.0 },
-      { id: 's1', name: 'Hexagon', type: 'shape', shapeId: 1, key: 'W', enabled: true, weight: 0.0, targetWeight: 0.0 },
-      { id: 's2', name: 'Diamond', type: 'shape', shapeId: 2, key: 'E', enabled: true, weight: 0.0, targetWeight: 0.0 },
-      { id: 's3', name: 'Triangle', type: 'shape', shapeId: 3, key: 'R', enabled: true, weight: 0.0, targetWeight: 0.0 },
-      { id: 's4', name: '6-Point Star', type: 'shape', shapeId: 4, key: 'T', enabled: false, weight: 0.0, targetWeight: 0.0 },
-      { id: 's5', name: 'Lotus Mandala', type: 'shape', shapeId: 5, key: 'Y', enabled: false, weight: 0.0, targetWeight: 0.0 }
-    ];
+    const quickKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+    // Pre-select a super diverse set of 15 figures & textures across all categories by default!
+    const defaultSelectedIndices = new Set([0, 1, 2, 15, 17, 19, 28, 30, 32, 45, 46, 60, 63, 75, 76]);
 
-    const defaultImageKeys = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
+    const deck = ITEMS_100.map((it, idx) => ({
+      id: 'f' + idx,
+      num: idx + 1,
+      name: it.name,
+      category: it.cat,
+      type: 'shape',
+      figId: it.fig,
+      texStyle: it.tex,
+      texName: TEX_STYLE_NAMES[it.tex],
+      params: it.p,
+      key: idx < quickKeys.length ? quickKeys[idx] : '',
+      enabled: defaultSelectedIndices.has(idx),
+      weight: idx === 0 ? 1.0 : 0.0,
+      targetWeight: idx === 0 ? 1.0 : 0.0
+    }));
+
+    const reservedKeys = new Set(['H', 'N', 'M', 'R', 'ESCAPE', ' ']);
+    const defaultImageKeys = ['Q', 'E', 'T', 'Y', 'U', 'I', 'O', 'P'];
+
     let listeningItemId = null;
     let isStarted = false;
+    let uiHidden = false;
     let autoLoop = true;
     let mixMode = 'blend';
-    let tunnelSpeed = 0.45;
-    let tunnelSegments = 8.0;
-    let manualOverrideTimer = 0;
+    let tunnelSpeed = 0.50;
+    let colorCycleSpeed = 1.3;
+    let colorBrightness = 1.0;
+    let steerSensitivity = 1.1;
+    let baseSegments = 8.0;
+    let currentSegments = 8.0;
+    let currentRealm = 0;
+    let autoRealmTimer = 0.0;
+    let manualOverrideTimer = 0.0;
+    let fpsFrames = 0;
+    let fpsLastUpdate = 0;
+    let currentFps = 120;
 
-    // Cache settings in memory so render loop never touches DOM
+    // Navigation & Steering State
+    let travelPos = 0.0;
+    let travelVel = 0.0;
+    let cameraRoll = 0.0;
+    let rollVel = 0.0;
+    let pointerX = 0.0;
+    let pointerY = 0.0;
+    let gyroSteerX = 0.0;
+    let gyroSteerY = 0.0;
+    let smoothSteerX = 0.0;
+    let smoothSteerY = 0.0;
+    let isBoostHolding = false;
+    let wheelBoostVel = 0.0;
+    let colorTimeAccum = 0.0;
+
+    // Touch & Gyro State
+    let touchActive = false;
+    let lastTouchX = 0.0;
+    let lastTouchY = 0.0;
+    let gyroEnabled = true;
+    let gyroActive = false;
+    let gyroListenerAttached = false;
+    let gyroBaseBeta = null;
+    let gyroBaseGamma = null;
+
+    // Cache DOM elements
     const speedInput = document.getElementById('speed-range');
+    const colorSpeedInput = document.getElementById('color-speed-range');
+    const brightnessInput = document.getElementById('brightness-range');
+    const steerInput = document.getElementById('steer-range');
     const segmentsSelect = document.getElementById('segments-select');
+    const realmSelect = document.getElementById('realm-select');
     const scaleSelect = document.getElementById('scale-select');
     const autoLoopToggle = document.getElementById('auto-loop-toggle');
+    const autoFpsToggle = document.getElementById('auto-fps-toggle');
+    const gyroToggle = document.getElementById('gyro-toggle');
     const mixModeSelect = document.getElementById('mix-mode-select');
-
-    speedInput.addEventListener('input', () => { tunnelSpeed = parseFloat(speedInput.value); });
-    segmentsSelect.addEventListener('change', () => { tunnelSegments = parseFloat(segmentsSelect.value); });
-    scaleSelect.addEventListener('change', () => {
-      renderScale = parseFloat(scaleSelect.value);
-      resize();
-    });
-
     const itemsGrid = document.getElementById('items-grid');
+    const patternSearch = document.getElementById('pattern-search');
+    const patternCatFilter = document.getElementById('pattern-cat-filter');
+    const patternCountLabel = document.getElementById('pattern-count-label');
     const setupOverlay = document.getElementById('setup-overlay');
     const liveHud = document.getElementById('live-hud');
     const fpsBadge = document.getElementById('fps-badge');
+    const toggleUiBtn = document.getElementById('toggle-ui-btn');
+    const imageInput = document.getElementById('image-input');
+    const startBtn = document.getElementById('start-btn');
+
+    function populateRealmsDropdown(selectEl) {
+      selectEl.innerHTML = '';
+      REALMS_20.forEach((r, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = `R${idx + 1}: ${r.name}`;
+        selectEl.appendChild(opt);
+      });
+      selectEl.value = String(currentRealm);
+    }
+    populateRealmsDropdown(realmSelect);
+
+    const eyeOpenSvg = '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const eyeOffSvg = '<svg viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.4 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3.6 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
+
+    // 1. PC Mouse Controls
+    window.addEventListener('mousemove', (e) => {
+      if (!isStarted || touchActive) return;
+      const nx = (e.clientX / Math.max(window.innerWidth, 1)) * 2.0 - 1.0;
+      const ny = 1.0 - (e.clientY / Math.max(window.innerHeight, 1)) * 2.0;
+      pointerX = nx * steerSensitivity;
+      pointerY = ny * steerSensitivity;
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (!isStarted || e.button !== 0) return;
+      isBoostHolding = true;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isBoostHolding = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      pointerX = 0.0;
+      pointerY = 0.0;
+      isBoostHolding = false;
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      if (!isStarted) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1.0 : -0.75;
+      wheelBoostVel = Math.max(-1.4, Math.min(2.2, wheelBoostVel + dir * 0.45));
+    }, { passive: false });
+
+    // 2. Mobile Touch Controls
+    canvas.addEventListener('touchstart', (e) => {
+      if (!isStarted) return;
+      touchActive = true;
+      if (e.touches.length >= 2) {
+        isBoostHolding = true;
+      }
+      if (e.touches.length > 0) {
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!isStarted || e.touches.length === 0) return;
+      const t = e.touches[0];
+      const dx = ((t.clientX - lastTouchX) / Math.max(window.innerWidth, 1)) * 2.6 * steerSensitivity;
+      const dy = -((t.clientY - lastTouchY) / Math.max(window.innerHeight, 1)) * 2.6 * steerSensitivity;
+      lastTouchX = t.clientX;
+      lastTouchY = t.clientY;
+
+      pointerX = Math.max(-1.6, Math.min(1.6, pointerX + dx));
+      pointerY = Math.max(-1.6, Math.min(1.6, pointerY + dy));
+      isBoostHolding = e.touches.length >= 2;
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        isBoostHolding = false;
+      }
+      if (e.touches.length === 0) {
+        touchActive = false;
+      } else {
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    // 3. Mobile Gyroscope Controls
+    function handleOrientation(e) {
+      if (!gyroEnabled || e.beta === null || e.gamma === null) return;
+      gyroActive = true;
+
+      if (gyroBaseBeta === null || gyroBaseGamma === null) {
+        gyroBaseBeta = e.beta;
+        gyroBaseGamma = e.gamma;
+      }
+
+      let dGamma = Math.max(-35, Math.min(35, e.gamma - gyroBaseGamma)) / 35.0;
+      let dBeta = Math.max(-35, Math.min(35, e.beta - gyroBaseBeta)) / 35.0;
+
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const gx = isLandscape ? dBeta : dGamma;
+      const gy = isLandscape ? dGamma : -dBeta;
+
+      gyroSteerX = gx * 1.15 * steerSensitivity;
+      gyroSteerY = gy * 1.15 * steerSensitivity;
+    }
+
+    function recalibrateGyro() {
+      gyroBaseBeta = null;
+      gyroBaseGamma = null;
+      gyroSteerX = 0.0;
+      gyroSteerY = 0.0;
+    }
+
+    function enableGyroSensor() {
+      recalibrateGyro();
+      if (typeof DeviceOrientationEvent === 'undefined') return;
+
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then((state) => {
+            if (state === 'granted' && !gyroListenerAttached) {
+              window.addEventListener('deviceorientation', handleOrientation, true);
+              gyroListenerAttached = true;
+            }
+            if (isStarted) buildLiveHud();
+          })
+          .catch(() => {});
+      } else if (!gyroListenerAttached) {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        gyroListenerAttached = true;
+      }
+    }
+
+    function setUiHidden(hidden) {
+      uiHidden = hidden;
+
+      if (!isStarted) {
+        liveHud.classList.remove('visible');
+        fpsBadge.classList.remove('visible');
+        toggleUiBtn.classList.remove('active-session');
+        return;
+      }
+
+      toggleUiBtn.classList.add('active-session');
+
+      if (uiHidden) {
+        liveHud.classList.remove('visible');
+        fpsBadge.classList.remove('visible');
+        toggleUiBtn.classList.add('ui-hidden-state');
+        toggleUiBtn.innerHTML = `${eyeOpenSvg}<span>Show UI (H)</span>`;
+        toggleUiBtn.setAttribute('aria-label', 'Show instructions and FPS');
+      } else {
+        liveHud.classList.add('visible');
+        fpsBadge.classList.add('visible');
+        toggleUiBtn.classList.remove('ui-hidden-state');
+        toggleUiBtn.innerHTML = `${eyeOffSvg}<span>Hide UI (H)</span>`;
+        toggleUiBtn.setAttribute('aria-label', 'Hide instructions and FPS');
+        fpsFrames = 0;
+        fpsLastUpdate = performance.now();
+      }
+    }
+
+    function toggleUI() {
+      if (!isStarted) return;
+      setUiHidden(!uiHidden);
+    }
+
+    toggleUiBtn.addEventListener('click', toggleUI);
+    speedInput.addEventListener('input', () => { tunnelSpeed = parseFloat(speedInput.value); });
+    colorSpeedInput.addEventListener('input', () => { colorCycleSpeed = parseFloat(colorSpeedInput.value); });
+    brightnessInput.addEventListener('input', () => { colorBrightness = parseFloat(brightnessInput.value); });
+    steerInput.addEventListener('input', () => { steerSensitivity = parseFloat(steerInput.value); });
+    segmentsSelect.addEventListener('change', () => {
+      baseSegments = parseFloat(segmentsSelect.value);
+      currentSegments = baseSegments;
+    });
+    realmSelect.addEventListener('change', () => { currentRealm = parseInt(realmSelect.value, 10) || 0; });
+    scaleSelect.addEventListener('change', () => {
+      renderScale = parseFloat(scaleSelect.value);
+      dynamicScale = renderScale;
+      resize();
+    });
+    autoFpsToggle.addEventListener('change', () => {
+      autoFpsBoost = autoFpsToggle.checked;
+      if (!autoFpsBoost) {
+        dynamicScale = renderScale;
+        resize();
+      }
+    });
+    gyroToggle.addEventListener('change', () => {
+      gyroEnabled = gyroToggle.checked;
+      if (!gyroEnabled) {
+        gyroSteerX = 0.0;
+        gyroSteerY = 0.0;
+      } else {
+        enableGyroSensor();
+      }
+    });
 
     function renderSetupGrid() {
       itemsGrid.innerHTML = '';
+      const q = (patternSearch.value || '').trim().toLowerCase();
+      const catFilter = patternCatFilter.value;
+      const enabledCount = deck.filter((d) => d.enabled).length;
+      patternCountLabel.textContent = `100 Figures & Textures (${enabledCount} of ${deck.length} Active in Loop)`;
+
       deck.forEach((item) => {
+        if (catFilter !== 'ALL' && item.category !== catFilter) return;
+        if (q && !item.name.toLowerCase().includes(q) && !item.category.toLowerCase().includes(q) && !(item.texName || '').toLowerCase().includes(q)) return;
+
         const card = document.createElement('div');
         card.className = 'item-card' + (item.enabled ? ' enabled' : '');
 
@@ -698,22 +1509,28 @@
         top.className = 'item-top';
 
         const toggleLabel = document.createElement('label');
-        toggleLabel.style.cssText = 'display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;';
+        toggleLabel.style.cssText = 'display:flex;align-items:center;gap:0.32rem;cursor:pointer;';
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = item.enabled;
         cb.addEventListener('change', () => {
           item.enabled = cb.checked;
-          if (!item.enabled) item.targetWeight = 0;
+          if (!item.enabled) item.targetWeight = 0.0;
           renderSetupGrid();
         });
         toggleLabel.appendChild(cb);
-        toggleLabel.appendChild(document.createTextNode('In Mix'));
+        toggleLabel.appendChild(document.createTextNode(`#${item.num}`));
         top.appendChild(toggleLabel);
 
-        if (item.type === 'image') {
+        if (item.type === 'shape') {
+          const texPill = document.createElement('span');
+          texPill.className = 'tex-pill';
+          texPill.textContent = item.texName;
+          top.appendChild(texPill);
+        } else {
           const rm = document.createElement('button');
           rm.className = 'remove-btn';
+          rm.type = 'button';
           rm.textContent = '×';
           rm.title = 'Remove image';
           rm.addEventListener('click', () => {
@@ -727,23 +1544,31 @@
         const preview = document.createElement('div');
         preview.className = 'item-preview';
         if (item.type === 'shape') {
-          preview.innerHTML = shapeSVGs[item.shapeId];
+          preview.innerHTML = figureSVGs[item.figId];
         } else {
           const imgEl = document.createElement('img');
           imgEl.src = item.thumbUrl;
+          imgEl.alt = item.name;
           preview.appendChild(imgEl);
         }
+
+        const catBadge = document.createElement('span');
+        catBadge.className = 'cat-tag';
+        catBadge.textContent = item.category;
+        preview.appendChild(catBadge);
 
         const controls = document.createElement('div');
         controls.className = 'item-controls';
 
         const nameEl = document.createElement('span');
         nameEl.className = 'item-name';
+        nameEl.title = item.name;
         nameEl.textContent = item.name;
 
         const keyBtn = document.createElement('button');
+        keyBtn.type = 'button';
         keyBtn.className = 'key-bind-btn' + (listeningItemId === item.id ? ' listening' : '');
-        keyBtn.textContent = listeningItemId === item.id ? 'Press Key' : `Key: ${item.key}`;
+        keyBtn.textContent = listeningItemId === item.id ? 'Key?' : (item.key ? `Key:${item.key}` : 'Bind');
         keyBtn.addEventListener('click', () => {
           listeningItemId = item.id;
           renderSetupGrid();
@@ -759,8 +1584,36 @@
       });
     }
 
-    document.getElementById('image-input').addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
+    patternSearch.addEventListener('input', renderSetupGrid);
+    patternCatFilter.addEventListener('change', renderSetupGrid);
+
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+      deck.forEach((d) => { d.enabled = true; });
+      renderSetupGrid();
+    });
+
+    document.getElementById('select-diverse-btn').addEventListener('click', () => {
+      deck.forEach((d, idx) => {
+        d.enabled = defaultSelectedIndices.has(idx);
+        if (!d.enabled) d.targetWeight = 0.0;
+      });
+      renderSetupGrid();
+    });
+
+    document.getElementById('random-setup-btn').addEventListener('click', () => {
+      currentRealm = Math.floor(Math.random() * REALMS_20.length);
+      realmSelect.value = String(currentRealm);
+      const randIdx = Math.floor(Math.random() * deck.length);
+      deck.forEach((d, i) => {
+        d.enabled = (i === randIdx) || (Math.random() < 0.16);
+        d.targetWeight = i === randIdx ? 1.0 : 0.0;
+        d.weight = d.targetWeight;
+      });
+      renderSetupGrid();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
       files.forEach((file) => {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -768,10 +1621,12 @@
           img.onload = () => {
             const texture = createTextureFromImage(img);
             const usedKeys = new Set(deck.map((d) => d.key));
-            const nextKey = defaultImageKeys.find((k) => !usedKeys.has(k)) || '1';
+            const nextKey = defaultImageKeys.find((k) => !usedKeys.has(k)) || '';
             deck.push({
               id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              num: deck.length + 1,
               name: file.name.replace(/\.[^/.]+$/, ''),
+              category: 'Custom Image',
               type: 'image',
               texture: texture,
               thumbUrl: ev.target.result,
@@ -789,63 +1644,163 @@
       e.target.value = '';
     });
 
-    let hudPillMap = new Map();
-    let lastActiveSignature = '';
+    let liveFigureSelect = null;
+    let liveRealmSelect = null;
+    let lastActiveFigId = '';
+    let lastActiveRealmIdx = -1;
+
+    function getPrimaryActiveItem() {
+      let best = deck[0];
+      for (let i = 0; i < deck.length; i++) {
+        if (deck[i].targetWeight > best.targetWeight) best = deck[i];
+      }
+      return best;
+    }
+
+    function stepFigure(delta) {
+      const enabled = deck.filter((d) => d.enabled);
+      const list = enabled.length > 0 ? enabled : deck;
+      const cur = getPrimaryActiveItem();
+      let idx = list.indexOf(cur);
+      idx = (idx + delta + list.length) % list.length;
+      triggerItem(list[idx]);
+    }
+
+    function stepRealm(delta) {
+      currentRealm = (currentRealm + delta + REALMS_20.length) % REALMS_20.length;
+      realmSelect.value = String(currentRealm);
+      syncLiveSelectors();
+    }
+
+    function randomizeFigure() {
+      const randFig = deck[Math.floor(Math.random() * deck.length)];
+      currentRealm = Math.floor(Math.random() * REALMS_20.length);
+      realmSelect.value = String(currentRealm);
+      triggerItem(randFig);
+      syncLiveSelectors();
+    }
 
     function buildLiveHud() {
       liveHud.innerHTML = '';
-      hudPillMap.clear();
-      lastActiveSignature = '';
+      lastActiveFigId = '';
+      lastActiveRealmIdx = -1;
 
-      const activeItems = deck.filter((d) => d.enabled);
-      activeItems.forEach((item) => {
-        const pill = document.createElement('div');
-        pill.className = 'hud-pill' + (item.targetWeight > 0.25 ? ' active' : '');
-        pill.innerHTML = `<span class="hud-key">${item.key}</span><span>${item.name}</span>`;
-        pill.addEventListener('click', () => triggerItem(item));
-        liveHud.appendChild(pill);
-        hudPillMap.set(item.id, pill);
+      const hintBar = document.createElement('div');
+      hintBar.className = 'hud-instructions';
+      hintBar.innerHTML = 'Steer: <strong>Mouse / Touch / Gyro</strong> &nbsp;|&nbsp; Boost: <strong>Hold / Scroll</strong> &nbsp;|&nbsp; Next Figure (100): <strong>N</strong> &nbsp;|&nbsp; Color Realm: <strong>M</strong> &nbsp;|&nbsp; Random: <strong>R</strong> &nbsp;|&nbsp; Hide UI: <strong>H</strong>';
+      liveHud.appendChild(hintBar);
+
+      const controlsRow = document.createElement('div');
+      controlsRow.className = 'hud-row';
+
+      // Prev / Selector / Next for 100 Figures & Textures
+      const prevFigBtn = document.createElement('button');
+      prevFigBtn.type = 'button';
+      prevFigBtn.className = 'hud-action';
+      prevFigBtn.textContent = '◀ Fig';
+      prevFigBtn.addEventListener('click', () => stepFigure(-1));
+      controlsRow.appendChild(prevFigBtn);
+
+      liveFigureSelect = document.createElement('select');
+      liveFigureSelect.className = 'hud-select';
+      liveFigureSelect.title = 'Choose any of the 100 Figures & Surface Textures';
+      deck.forEach((item) => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `#${item.num} ${item.name}`;
+        liveFigureSelect.appendChild(opt);
       });
+      liveFigureSelect.addEventListener('change', () => {
+        const chosen = deck.find((d) => d.id === liveFigureSelect.value);
+        if (chosen) triggerItem(chosen);
+      });
+      controlsRow.appendChild(liveFigureSelect);
+
+      const nextFigBtn = document.createElement('button');
+      nextFigBtn.type = 'button';
+      nextFigBtn.className = 'hud-action';
+      nextFigBtn.textContent = 'Fig ▶';
+      nextFigBtn.addEventListener('click', () => stepFigure(1));
+      controlsRow.appendChild(nextFigBtn);
+
+      // Prev / Selector / Next for 20 Color Realms
+      liveRealmSelect = document.createElement('select');
+      liveRealmSelect.className = 'hud-select';
+      liveRealmSelect.title = 'Choose Color & Tunnel Realm';
+      populateRealmsDropdown(liveRealmSelect);
+      liveRealmSelect.addEventListener('change', () => {
+        currentRealm = parseInt(liveRealmSelect.value, 10) || 0;
+        realmSelect.value = String(currentRealm);
+      });
+      controlsRow.appendChild(liveRealmSelect);
+
+      const randBtn = document.createElement('button');
+      randBtn.type = 'button';
+      randBtn.className = 'hud-action highlight';
+      randBtn.textContent = '🎲 Random (R)';
+      randBtn.addEventListener('click', randomizeFigure);
+      controlsRow.appendChild(randBtn);
 
       const autoBtn = document.createElement('button');
+      autoBtn.type = 'button';
       autoBtn.className = 'hud-action';
-      autoBtn.textContent = autoLoop ? 'Auto-Loop: ON' : 'Auto-Loop: OFF';
+      autoBtn.textContent = autoLoop ? 'Morph: ON' : 'Morph: OFF';
       autoBtn.addEventListener('click', () => {
         autoLoop = !autoLoop;
         autoLoopToggle.checked = autoLoop;
         buildLiveHud();
       });
-      liveHud.appendChild(autoBtn);
+      controlsRow.appendChild(autoBtn);
+
+      const gyroBtn = document.createElement('button');
+      gyroBtn.type = 'button';
+      gyroBtn.className = 'hud-action';
+      gyroBtn.textContent = gyroEnabled ? (gyroActive ? 'Center Gyro' : 'Gyro: ON') : 'Gyro: OFF';
+      gyroBtn.addEventListener('click', () => {
+        if (!gyroEnabled) {
+          gyroEnabled = true;
+          gyroToggle.checked = true;
+        }
+        enableGyroSensor();
+        buildLiveHud();
+      });
+      controlsRow.appendChild(gyroBtn);
 
       const editBtn = document.createElement('button');
+      editBtn.type = 'button';
       editBtn.className = 'hud-action';
-      editBtn.textContent = 'Edit Mix (Esc)';
+      editBtn.textContent = '100 Gallery (Esc)';
       editBtn.addEventListener('click', openSetup);
-      liveHud.appendChild(editBtn);
+      controlsRow.appendChild(editBtn);
+
+      liveHud.appendChild(controlsRow);
+      syncLiveSelectors();
     }
 
-    // Only updates DOM when active highlight state actually changes
-    function syncHudHighlight() {
-      let sig = '';
-      for (let i = 0; i < deck.length; i++) {
-        if (deck[i].targetWeight > 0.25) sig += deck[i].id + ',';
+    function syncLiveSelectors() {
+      const primary = getPrimaryActiveItem();
+      if (liveFigureSelect && primary && primary.id !== lastActiveFigId) {
+        lastActiveFigId = primary.id;
+        liveFigureSelect.value = primary.id;
       }
-      if (sig === lastActiveSignature) return;
-      lastActiveSignature = sig;
+      if (liveRealmSelect && currentRealm !== lastActiveRealmIdx) {
+        lastActiveRealmIdx = currentRealm;
+        liveRealmSelect.value = String(currentRealm);
+      }
+    }
 
-      hudPillMap.forEach((pill, id) => {
-        const item = deck.find((d) => d.id === id);
-        if (item) {
-          pill.classList.toggle('active', item.targetWeight > 0.25);
-        }
-      });
+    function clearCanvasDark() {
+      if (!gl) return;
+      gl.clearColor(0.0196, 0.0196, 0.0314, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     function openSetup() {
       isStarted = false;
+      isBoostHolding = false;
       setupOverlay.classList.remove('hidden');
-      liveHud.classList.remove('visible');
-      fpsBadge.classList.remove('visible');
+      setUiHidden(false);
+      clearCanvasDark();
       renderSetupGrid();
     }
 
@@ -854,57 +1809,72 @@
         deck[0].enabled = true;
       }
       autoLoop = autoLoopToggle.checked;
+      autoFpsBoost = autoFpsToggle.checked;
+      gyroEnabled = gyroToggle.checked;
       mixMode = mixModeSelect.value;
       tunnelSpeed = parseFloat(speedInput.value);
-      tunnelSegments = parseFloat(segmentsSelect.value);
+      colorCycleSpeed = parseFloat(colorSpeedInput.value);
+      colorBrightness = parseFloat(brightnessInput.value);
+      steerSensitivity = parseFloat(steerInput.value);
+      baseSegments = parseFloat(segmentsSelect.value);
+      currentSegments = baseSegments;
+      currentRealm = parseInt(realmSelect.value, 10) || 0;
       renderScale = parseFloat(scaleSelect.value);
+      dynamicScale = renderScale;
       resize();
 
+      if (gyroEnabled) {
+        enableGyroSensor();
+      }
+
       const enabledItems = deck.filter((d) => d.enabled);
-      deck.forEach((d) => (d.targetWeight = 0));
+      deck.forEach((d) => {
+        d.targetWeight = 0.0;
+      });
       enabledItems[0].targetWeight = 1.0;
+      if (enabledItems[0].weight < 0.2) {
+        enabledItems[0].weight = 1.0;
+      }
 
       isStarted = true;
       listeningItemId = null;
       setupOverlay.classList.add('hidden');
-      liveHud.classList.add('visible');
-      fpsBadge.classList.add('visible');
+      setUiHidden(false);
       buildLiveHud();
     }
 
-    document.getElementById('start-btn').addEventListener('click', startMix);
+    startBtn.addEventListener('click', startMix);
 
     function triggerItem(targetItem) {
       if (!targetItem.enabled) targetItem.enabled = true;
-      manualOverrideTimer = 4.5;
+      manualOverrideTimer = 6.5;
 
       if (mixMode === 'solo') {
         deck.forEach((item) => {
           item.targetWeight = item.id === targetItem.id ? 1.0 : 0.0;
         });
       } else {
-        if (targetItem.targetWeight > 0.5) {
-          const activeCount = deck.filter((d) => d.targetWeight > 0.2).length;
-          if (activeCount > 1) targetItem.targetWeight = 0.0;
-        } else {
-          targetItem.targetWeight = 1.0;
-          const active = deck.filter((d) => d.targetWeight > 0.2);
-          if (active.length > 3) {
-            const oldest = active.find((d) => d.id !== targetItem.id);
-            if (oldest) oldest.targetWeight = 0.0;
-          }
+        targetItem.targetWeight = 1.0;
+        const active = deck.filter((d) => d.targetWeight > 0.2);
+        if (active.length > 2) {
+          const oldest = active.find((d) => d.id !== targetItem.id);
+          if (oldest) oldest.targetWeight = 0.0;
         }
       }
-      syncHudHighlight();
+      syncLiveSelectors();
     }
 
     window.addEventListener('keydown', (e) => {
       if (listeningItemId) {
         e.preventDefault();
         if (e.key !== 'Escape') {
-          const cleanKey = e.key.length === 1 ? e.key.toUpperCase() : e.code.replace('Key', '').replace('Digit', '');
-          const item = deck.find((d) => d.id === listeningItemId);
-          if (item && cleanKey) item.key = cleanKey;
+          const cleanKey = e.key.length === 1
+            ? e.key.toUpperCase()
+            : e.code.replace('Key', '').replace('Digit', '').toUpperCase();
+          if (!reservedKeys.has(cleanKey)) {
+            const item = deck.find((d) => d.id === listeningItemId);
+            if (item && cleanKey) item.key = cleanKey;
+          }
         }
         listeningItemId = null;
         renderSetupGrid();
@@ -918,6 +1888,28 @@
 
       if (!isStarted) return;
 
+      const upper = e.key.toUpperCase();
+
+      if (upper === 'H') {
+        e.preventDefault();
+        toggleUI();
+        return;
+      }
+      if (upper === 'N') {
+        e.preventDefault();
+        stepFigure(1);
+        return;
+      }
+      if (upper === 'M') {
+        e.preventDefault();
+        stepRealm(1);
+        return;
+      }
+      if (upper === 'R') {
+        e.preventDefault();
+        randomizeFigure();
+        return;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         autoLoop = !autoLoop;
@@ -926,48 +1918,92 @@
         return;
       }
 
-      const pressed = e.key.toUpperCase();
-      const matched = deck.find((item) => item.key.toUpperCase() === pressed);
-      if (matched) triggerItem(matched);
+      const matched = deck.find((item) => item.key && item.key.toUpperCase() === upper);
+      if (matched) {
+        triggerItem(matched);
+      }
     });
 
+    clearCanvasDark();
     renderSetupGrid();
 
-    // Pre-allocated Float32Arrays for rotation matrices to avoid garbage collection
     const rotMats = [
-      new Float32Array(4),
       new Float32Array(4),
       new Float32Array(4),
       new Float32Array(4)
     ];
-    const rotUniformLocs = [uLoc.rot0, uLoc.rot1, uLoc.rot2, uLoc.rot3];
+    const rotUniformLocs = [uLoc.rot0, uLoc.rot1, uLoc.rot2];
+    const rotDirs = [1.0, -0.85, 1.18];
+
+    const cpuColors = [
+      new Float32Array(3),
+      new Float32Array(3),
+      new Float32Array(3),
+      new Float32Array(3)
+    ];
+
+    function computeBalancedColor(outArr, phase, realmIdx, nextRealmIdx, realmBlend) {
+      const pA = REALMS_20[realmIdx].rgb;
+      const pB = REALMS_20[nextRealmIdx].rgb;
+      for (let c = 0; c < 3; c++) {
+        const d = pA[c] + (pB[c] - pA[c]) * realmBlend;
+        const v = 0.54 + 0.38 * Math.cos(6.2831853 * (phase + d));
+        outArr[c] = Math.max(0.14, v);
+      }
+    }
 
     let lastTime = 0;
     let loopPhase = 0;
-    let fpsFrames = 0;
-    let fpsLastUpdate = 0;
 
     function render(now) {
       requestAnimationFrame(render);
 
-      // Pause heavy GPU rendering while Setup Studio is covering the screen
-      if (!isStarted) {
-        lastTime = now * 0.001;
-        return;
-      }
-
       const timeSec = now * 0.001;
-      const dt = Math.min(0.1, timeSec - lastTime);
+      const dt = Math.min(0.1, Math.max(0.0001, timeSec - lastTime));
       lastTime = timeSec;
 
-      // Update FPS badge twice per second
+      if (!isStarted) return;
+
       fpsFrames++;
       if (now - fpsLastUpdate >= 500) {
-        const fps = Math.round((fpsFrames * 1000) / (now - fpsLastUpdate));
-        fpsBadge.textContent = `${fps} FPS`;
+        currentFps = Math.round((fpsFrames * 1000) / (now - fpsLastUpdate));
+        if (!uiHidden && fpsBadge) {
+          fpsBadge.textContent = `${currentFps} FPS`;
+        }
+
+        if (autoFpsBoost) {
+          if (currentFps < 52 && dynamicScale > 0.45) {
+            dynamicScale = Math.max(0.45, dynamicScale - 0.08);
+            resize();
+          } else if (currentFps > 64 && dynamicScale < renderScale) {
+            dynamicScale = Math.min(renderScale, dynamicScale + 0.04);
+            resize();
+          }
+        }
         fpsFrames = 0;
         fpsLastUpdate = now;
       }
+
+      const targetSteerX = Math.max(-1.65, Math.min(1.65, pointerX + gyroSteerX));
+      const targetSteerY = Math.max(-1.65, Math.min(1.65, pointerY + gyroSteerY));
+      smoothSteerX += (targetSteerX - smoothSteerX) * Math.min(1.0, dt * 8.5);
+      smoothSteerY += (targetSteerY - smoothSteerY) * Math.min(1.0, dt * 8.5);
+
+      if (!touchActive && gyroActive) {
+        pointerX *= Math.max(0.0, 1.0 - dt * 2.5);
+        pointerY *= Math.max(0.0, 1.0 - dt * 2.5);
+      }
+
+      const targetBoost = (isBoostHolding ? 1.35 * steerSensitivity : 0.0) + wheelBoostVel;
+      wheelBoostVel *= Math.max(0.0, 1.0 - dt * 3.8);
+      travelVel += (targetBoost - travelVel) * Math.min(1.0, dt * 6.5);
+      travelPos = (travelPos + (tunnelSpeed + travelVel) * dt) % 628.31853;
+
+      const targetRollVel = smoothSteerX * 0.95 + 0.12;
+      rollVel += (targetRollVel - rollVel) * Math.min(1.0, dt * 5.0);
+      cameraRoll = (cameraRoll + rollVel * dt) % 62.831853;
+
+      colorTimeAccum = (colorTimeAccum + dt * colorCycleSpeed * (1.0 + Math.abs(travelVel) * 0.4)) % 628.31853;
 
       if (manualOverrideTimer > 0) {
         manualOverrideTimer -= dt;
@@ -975,54 +2011,92 @@
 
       const enabledItems = deck.filter((d) => d.enabled);
 
-      if (autoLoop && manualOverrideTimer <= 0 && enabledItems.length > 1) {
-        loopPhase += dt * 0.28;
-        const count = enabledItems.length;
-        const idxA = Math.floor(loopPhase) % count;
-        const idxB = (idxA + 1) % count;
-        const frac = loopPhase - Math.floor(loopPhase);
-        const blend = frac * frac * (3.0 - 2.0 * frac);
+      let realmBlend = 0.0;
+      let nextRealm = (currentRealm + 1) % REALMS_20.length;
 
-        for (let i = 0; i < deck.length; i++) deck[i].targetWeight = 0;
-        enabledItems[idxA].targetWeight = 1.0 - blend * 0.7;
-        enabledItems[idxB].targetWeight = blend;
-        syncHudHighlight();
+      if (autoLoop) {
+        autoRealmTimer += dt * 0.14;
+        if (autoRealmTimer >= 1.0) {
+          autoRealmTimer -= 1.0;
+          currentRealm = (currentRealm + 1) % REALMS_20.length;
+          realmSelect.value = String(currentRealm);
+          syncLiveSelectors();
+        }
+        nextRealm = (currentRealm + 1) % REALMS_20.length;
+        realmBlend = autoRealmTimer * autoRealmTimer * (3.0 - 2.0 * autoRealmTimer);
+
+        currentSegments = baseSegments;
+
+        if (manualOverrideTimer <= 0 && enabledItems.length > 1) {
+          loopPhase += dt * 0.28;
+          const count = enabledItems.length;
+          const idxA = Math.floor(loopPhase) % count;
+          const idxB = (idxA + 1) % count;
+          const frac = loopPhase - Math.floor(loopPhase);
+          const blend = frac * frac * (3.0 - 2.0 * frac);
+
+          for (let i = 0; i < deck.length; i++) deck[i].targetWeight = 0.0;
+          enabledItems[idxA].targetWeight = 1.0 - blend * 0.85;
+          enabledItems[idxB].targetWeight = blend;
+          syncLiveSelectors();
+        }
+      } else {
+        currentSegments = baseSegments;
       }
 
-      const lerpFactor = Math.min(1.0, dt * 4.5);
+      const lerpFactor = Math.min(1.0, dt * 5.0);
       for (let i = 0; i < deck.length; i++) {
         deck[i].weight += (deck[i].targetWeight - deck[i].weight) * lerpFactor;
       }
 
-      // Find top 3 active items without array allocations
-      let s0 = null, s1 = null, s2 = null;
+      let s0 = null, s1 = null;
       for (let i = 0; i < deck.length; i++) {
         const item = deck[i];
-        if (item.weight <= 0.002) continue;
+        if (item.weight <= 0.005) continue;
         if (!s0 || item.weight > s0.weight) {
-          s2 = s1; s1 = s0; s0 = item;
+          s1 = s0;
+          s0 = item;
         } else if (!s1 || item.weight > s1.weight) {
-          s2 = s1; s1 = item;
-        } else if (!s2 || item.weight > s2.weight) {
-          s2 = item;
+          s1 = item;
         }
       }
 
-      // Compute 4 rotation matrices on CPU once per frame
-      for (let i = 0; i < 4; i++) {
-        const a = timeSec * 0.1 + i * 0.45;
+      if (!s0 && deck.length > 0) {
+        s0 = deck[0];
+        s0.weight = 1.0;
+        s0.targetWeight = 1.0;
+      }
+
+      const colorPhaseBase = colorTimeAccum * 0.22;
+      for (let i = 0; i < 3; i++) {
+        const a = (timeSec * 0.12 + travelPos * 0.12) * rotDirs[i] + i * 0.65 + cameraRoll * 0.18;
         const s = Math.sin(a);
         const c = Math.cos(a);
         const m = rotMats[i];
         m[0] = c; m[1] = -s; m[2] = s; m[3] = c;
         gl.uniformMatrix2fv(rotUniformLocs[i], false, m);
+
+        computeBalancedColor(cpuColors[i], colorPhaseBase + i * 0.26, currentRealm, nextRealm, realmBlend);
       }
+      computeBalancedColor(cpuColors[3], colorPhaseBase + 0.52, currentRealm, nextRealm, realmBlend);
+
+      gl.uniform3fv(uLoc.col0, cpuColors[0]);
+      gl.uniform3fv(uLoc.col1, cpuColors[1]);
+      gl.uniform3fv(uLoc.col2, cpuColors[2]);
+      gl.uniform3fv(uLoc.coreCol, cpuColors[3]);
+
+      const rA = REALMS_20[currentRealm];
+      const rB = REALMS_20[nextRealm];
+      gl.uniform1f(uLoc.twist, rA.twist + (rB.twist - rA.twist) * realmBlend);
+      gl.uniform1f(uLoc.foldMix, rA.fold + (rB.fold - rA.fold) * realmBlend);
 
       gl.uniform2f(uLoc.resolution, canvas.width, canvas.height);
-      gl.uniform1f(uLoc.time, timeSec);
-      gl.uniform1f(uLoc.speed, tunnelSpeed);
-      gl.uniform1f(uLoc.segments, tunnelSegments);
-      gl.uniform1f(uLoc.palBlend, 0.5 + 0.5 * Math.sin(timeSec * 0.09));
+      gl.uniform1f(uLoc.travel, travelPos);
+      gl.uniform1f(uLoc.roll, cameraRoll);
+      gl.uniform2f(uLoc.steer, smoothSteerX, smoothSteerY);
+      gl.uniform1f(uLoc.colorTime, colorTimeAccum);
+      gl.uniform1f(uLoc.segments, currentSegments);
+      gl.uniform1f(uLoc.brightness, colorBrightness);
 
       // Bind Slot 0
       gl.activeTexture(gl.TEXTURE0);
@@ -1030,7 +2104,10 @@
         gl.bindTexture(gl.TEXTURE_2D, s0.type === 'image' ? s0.texture : fallbackTex);
         gl.uniform1i(uLoc.tex0, 0);
         gl.uniform1i(uLoc.type0, s0.type === 'image' ? 1 : 0);
-        gl.uniform1f(uLoc.shape0, s0.shapeId || 0);
+        gl.uniform1f(uLoc.fig0, s0.figId || 0);
+        gl.uniform1f(uLoc.texStyle0, s0.texStyle || 0);
+        const p0 = s0.params || [1, 1, 1, 1];
+        gl.uniform4f(uLoc.param0, p0[0], p0[1], p0[2], p0[3]);
         gl.uniform1f(uLoc.weight0, s0.weight);
       } else {
         gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
@@ -1043,24 +2120,14 @@
         gl.bindTexture(gl.TEXTURE_2D, s1.type === 'image' ? s1.texture : fallbackTex);
         gl.uniform1i(uLoc.tex1, 1);
         gl.uniform1i(uLoc.type1, s1.type === 'image' ? 1 : 0);
-        gl.uniform1f(uLoc.shape1, s1.shapeId || 0);
+        gl.uniform1f(uLoc.fig1, s1.figId || 0);
+        gl.uniform1f(uLoc.texStyle1, s1.texStyle || 0);
+        const p1 = s1.params || [1, 1, 1, 1];
+        gl.uniform4f(uLoc.param1, p1[0], p1[1], p1[2], p1[3]);
         gl.uniform1f(uLoc.weight1, s1.weight);
       } else {
         gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
         gl.uniform1f(uLoc.weight1, 0.0);
-      }
-
-      // Bind Slot 2
-      gl.activeTexture(gl.TEXTURE2);
-      if (s2) {
-        gl.bindTexture(gl.TEXTURE_2D, s2.type === 'image' ? s2.texture : fallbackTex);
-        gl.uniform1i(uLoc.tex2, 2);
-        gl.uniform1i(uLoc.type2, s2.type === 'image' ? 1 : 0);
-        gl.uniform1f(uLoc.shape2, s2.shapeId || 0);
-        gl.uniform1f(uLoc.weight2, s2.weight);
-      } else {
-        gl.bindTexture(gl.TEXTURE_2D, fallbackTex);
-        gl.uniform1f(uLoc.weight2, 0.0);
       }
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
